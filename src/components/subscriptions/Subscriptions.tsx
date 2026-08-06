@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Plus, Pencil, Trash2, CreditCard } from 'lucide-react';
+import { Plus, Pencil, Trash2, CreditCard, TrendingUp, TrendingDown } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { Subscription } from '../../types';
+import { Subscription, TransactionType } from '../../types';
 import { formatCurrency, getDaysUntil, getMonthlyAmount, generateId } from '../../utils/formatters';
 import { Button } from '../ui/Button';
 import { Input, Select } from '../ui/Input';
@@ -22,6 +22,7 @@ export function Subscriptions() {
   const [editingSub, setEditingSub] = useState<Subscription | null>(null);
 
   const [form, setForm] = useState({
+    type: 'expense' as TransactionType,
     name: '',
     amount: '',
     billingCycle: 'monthly' as 'weekly' | 'monthly' | 'yearly',
@@ -31,10 +32,18 @@ export function Subscriptions() {
     active: true,
   });
 
-  const monthlyTotal = useMemo(
+  const monthlyExpenseTotal = useMemo(
     () =>
       state.subscriptions
-        .filter((s) => s.active)
+        .filter((s) => s.active && s.type === 'expense')
+        .reduce((sum, s) => sum + getMonthlyAmount(s.amount, s.billingCycle), 0),
+    [state.subscriptions]
+  );
+
+  const monthlyIncomeTotal = useMemo(
+    () =>
+      state.subscriptions
+        .filter((s) => s.active && s.type === 'income')
         .reduce((sum, s) => sum + getMonthlyAmount(s.amount, s.billingCycle), 0),
     [state.subscriptions]
   );
@@ -42,20 +51,22 @@ export function Subscriptions() {
   const sortedSubscriptions = useMemo(
     () =>
       [...state.subscriptions].sort((a, b) => {
+        if (a.type !== b.type) return a.type === 'income' ? -1 : 1;
         if (a.active !== b.active) return a.active ? -1 : 1;
         return new Date(a.nextPayment).getTime() - new Date(b.nextPayment).getTime();
       }),
     [state.subscriptions]
   );
 
-  const expenseCategories = useMemo(
-    () => state.categories.filter((c) => c.type === 'expense'),
-    [state.categories]
+  const filteredCategories = useMemo(
+    () => state.categories.filter((c) => c.type === form.type),
+    [state.categories, form.type]
   );
 
   const openCreateModal = () => {
     setEditingSub(null);
     setForm({
+      type: 'expense',
       name: '',
       amount: '',
       billingCycle: 'monthly',
@@ -70,6 +81,7 @@ export function Subscriptions() {
   const openEditModal = (s: Subscription) => {
     setEditingSub(s);
     setForm({
+      type: s.type,
       name: s.name,
       amount: s.amount.toString(),
       billingCycle: s.billingCycle,
@@ -86,6 +98,7 @@ export function Subscriptions() {
 
     const subscription: Subscription = {
       id: editingSub?.id || generateId(),
+      type: form.type,
       name: form.name,
       amount: parseFloat(form.amount),
       billingCycle: form.billingCycle,
@@ -108,84 +121,183 @@ export function Subscriptions() {
     dispatch({ type: 'DELETE_SUBSCRIPTION', payload: id });
   };
 
+  const incomeSubs = sortedSubscriptions.filter((s) => s.type === 'income');
+  const expenseSubs = sortedSubscriptions.filter((s) => s.type === 'expense');
+
   return (
     <div>
       <div className={styles.header}>
-        <h1 className={styles.title}>Suscripciones</h1>
+        <h1 className={styles.title}>Ingresos y Gastos recurrentes</h1>
         <Button icon={<Plus size={18} />} onClick={openCreateModal}>
           Añadir
         </Button>
       </div>
 
-      <div className={styles['monthly-total']}>
-        <span className={styles['total-label']}>Gasto mensual estimado en suscripciones</span>
-        <span className={styles['total-value']}>{formatCurrency(monthlyTotal)}</span>
+      <div className={styles['totals-row']}>
+        <div className={`${styles['total-box']} ${styles['total-income']}`}>
+          <div className={styles['total-icon']}>
+            <TrendingUp size={20} />
+          </div>
+          <div>
+            <span className={styles['total-label']}>Ingresos recurrentes / mes</span>
+            <span className={`${styles['total-value']} ${styles.positive}`}>{formatCurrency(monthlyIncomeTotal)}</span>
+          </div>
+        </div>
+        <div className={`${styles['total-box']} ${styles['total-expense']}`}>
+          <div className={styles['total-icon']}>
+            <TrendingDown size={20} />
+          </div>
+          <div>
+            <span className={styles['total-label']}>Gastos recurrentes / mes</span>
+            <span className={`${styles['total-value']} ${styles.negative}`}>{formatCurrency(monthlyExpenseTotal)}</span>
+          </div>
+        </div>
       </div>
 
-      <div className={styles.grid}>
-        {sortedSubscriptions.length > 0 ? (
-          sortedSubscriptions.map((s) => {
-            const days = getDaysUntil(s.nextPayment);
-            const cat = state.categories.find((c) => c.id === s.category);
-            return (
-              <div key={s.id} className={`${styles['sub-card']} ${!s.active ? styles.inactive : ''}`}>
-                <div className={styles['sub-header']}>
-                  <div className={styles['sub-info']}>
-                    <div className={styles['sub-dot']} style={{ background: s.color }} />
-                    <div>
-                      <div className={styles['sub-name']}>{s.name}</div>
-                      <div className={styles['sub-category']}>{cat?.name || ''}</div>
+      {incomeSubs.length > 0 && (
+        <div className={styles.section}>
+          <h2 className={styles['section-title']}>
+            <TrendingUp size={18} style={{ color: '#22c55e' }} />
+            Ingresos recurrentes
+          </h2>
+          <div className={styles.grid}>
+            {incomeSubs.map((s) => {
+              const days = getDaysUntil(s.nextPayment);
+              const cat = state.categories.find((c) => c.id === s.category);
+              return (
+                <div key={s.id} className={`${styles['sub-card']} ${styles['sub-income']} ${!s.active ? styles.inactive : ''}`}>
+                  <div className={styles['sub-header']}>
+                    <div className={styles['sub-info']}>
+                      <div className={styles['sub-dot']} style={{ background: s.color }} />
+                      <div>
+                        <div className={styles['sub-name']}>{s.name}</div>
+                        <div className={styles['sub-category']}>{cat?.name || ''}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                      <span className={`${styles['sub-amount']} ${styles.positive}`}>+{formatCurrency(s.amount)}</span>
+                      <div className={styles['sub-actions']}>
+                        <button className={styles['action-btn']} onClick={() => openEditModal(s)}>
+                          <Pencil size={15} />
+                        </button>
+                        <button className={styles['action-btn']} onClick={() => handleDelete(s.id)}>
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                    <span className={styles['sub-amount']}>{formatCurrency(s.amount)}</span>
-                    <div className={styles['sub-actions']}>
-                      <button className={styles['action-btn']} onClick={() => openEditModal(s)}>
-                        <Pencil size={15} />
-                      </button>
-                      <button className={styles['action-btn']} onClick={() => handleDelete(s.id)}>
-                        <Trash2 size={15} />
-                      </button>
+                  <div className={styles['sub-details']}>
+                    <div className={styles['sub-detail']}>
+                      <span className={styles['sub-detail-label']}>Ciclo</span>
+                      <span className={styles['sub-detail-value']}>{CYCLE_LABELS[s.billingCycle]}</span>
+                    </div>
+                    <div className={styles['sub-detail']}>
+                      <span className={styles['sub-detail-label']}>Próximo cobro</span>
+                      <span className={styles['sub-detail-value']}>{s.nextPayment}</span>
+                    </div>
+                    <div className={styles['sub-detail']}>
+                      <span className={styles['sub-detail-label']}>Faltan</span>
+                      <span className={`${styles['days-badge']} ${days <= 7 ? styles.soon : styles.ok}`}>
+                        {days} días
+                      </span>
                     </div>
                   </div>
                 </div>
-                <div className={styles['sub-details']}>
-                  <div className={styles['sub-detail']}>
-                    <span className={styles['sub-detail-label']}>Ciclo</span>
-                    <span className={styles['sub-detail-value']}>{CYCLE_LABELS[s.billingCycle]}</span>
-                  </div>
-                  <div className={styles['sub-detail']}>
-                    <span className={styles['sub-detail-label']}>Próximo cobro</span>
-                    <span className={styles['sub-detail-value']}>{s.nextPayment}</span>
-                  </div>
-                  <div className={styles['sub-detail']}>
-                    <span className={styles['sub-detail-label']}>Faltan</span>
-                    <span className={`${styles['days-badge']} ${days <= 7 ? styles.soon : styles.ok}`}>
-                      {days} días
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })
-        ) : (
-          <div className={styles['empty-state']}>
-            <CreditCard size={48} className={styles['empty-icon']} />
-            <p>No hay suscripciones registradas</p>
+              );
+            })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {expenseSubs.length > 0 && (
+        <div className={styles.section}>
+          <h2 className={styles['section-title']}>
+            <TrendingDown size={18} style={{ color: '#ef4444' }} />
+            Gastos recurrentes
+          </h2>
+          <div className={styles.grid}>
+            {expenseSubs.map((s) => {
+              const days = getDaysUntil(s.nextPayment);
+              const cat = state.categories.find((c) => c.id === s.category);
+              return (
+                <div key={s.id} className={`${styles['sub-card']} ${styles['sub-expense']} ${!s.active ? styles.inactive : ''}`}>
+                  <div className={styles['sub-header']}>
+                    <div className={styles['sub-info']}>
+                      <div className={styles['sub-dot']} style={{ background: s.color }} />
+                      <div>
+                        <div className={styles['sub-name']}>{s.name}</div>
+                        <div className={styles['sub-category']}>{cat?.name || ''}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                      <span className={`${styles['sub-amount']} ${styles.negative}`}>-{formatCurrency(s.amount)}</span>
+                      <div className={styles['sub-actions']}>
+                        <button className={styles['action-btn']} onClick={() => openEditModal(s)}>
+                          <Pencil size={15} />
+                        </button>
+                        <button className={styles['action-btn']} onClick={() => handleDelete(s.id)}>
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className={styles['sub-details']}>
+                    <div className={styles['sub-detail']}>
+                      <span className={styles['sub-detail-label']}>Ciclo</span>
+                      <span className={styles['sub-detail-value']}>{CYCLE_LABELS[s.billingCycle]}</span>
+                    </div>
+                    <div className={styles['sub-detail']}>
+                      <span className={styles['sub-detail-label']}>Próximo cobro</span>
+                      <span className={styles['sub-detail-value']}>{s.nextPayment}</span>
+                    </div>
+                    <div className={styles['sub-detail']}>
+                      <span className={styles['sub-detail-label']}>Faltan</span>
+                      <span className={`${styles['days-badge']} ${days <= 7 ? styles.soon : styles.ok}`}>
+                        {days} días
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {sortedSubscriptions.length === 0 && (
+        <div className={styles['empty-state']}>
+          <CreditCard size={48} className={styles['empty-icon']} />
+          <p>No hay ingresos ni gastos recurrentes</p>
+        </div>
+      )}
 
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingSub ? 'Editar suscripción' : 'Nueva suscripción'}
+        title={editingSub ? 'Editar recurrente' : 'Nuevo recurrente'}
       >
+        <div className={styles['type-toggle']}>
+          <button
+            className={`${styles['type-btn']} ${form.type === 'expense' ? styles['active-expense'] : ''}`}
+            onClick={() => setForm({ ...form, type: 'expense', category: '' })}
+          >
+            <TrendingDown size={16} />
+            Gasto recurrente
+          </button>
+          <button
+            className={`${styles['type-btn']} ${form.type === 'income' ? styles['active-income'] : ''}`}
+            onClick={() => setForm({ ...form, type: 'income', category: '' })}
+          >
+            <TrendingUp size={16} />
+            Ingreso recurrente
+          </button>
+        </div>
+
         <Input
           label="Nombre"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
-          placeholder="Ej: Netflix"
+          placeholder={form.type === 'income' ? 'Ej: Nómina' : 'Ej: Netflix'}
         />
 
         <div className={styles['form-grid']}>
@@ -210,7 +322,7 @@ export function Subscriptions() {
         </div>
 
         <Input
-          label="Próximo cobro"
+          label={form.type === 'income' ? 'Próximo ingreso' : 'Próximo cobro'}
           type="date"
           value={form.nextPayment}
           onChange={(e) => setForm({ ...form, nextPayment: e.target.value })}
@@ -222,7 +334,7 @@ export function Subscriptions() {
           onChange={(e) => setForm({ ...form, category: e.target.value })}
         >
           <option value="">Seleccionar categoría</option>
-          {expenseCategories.map((c) => (
+          {filteredCategories.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </Select>
@@ -245,7 +357,6 @@ export function Subscriptions() {
             <label className={styles['sub-detail-label']} style={{ display: 'block', marginBottom: '0.375rem' }}>Estado</label>
             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.375rem' }}>
               <button
-                className={`${styles['color-btn']}`}
                 style={{
                   width: 'auto',
                   height: 'auto',
@@ -288,7 +399,7 @@ export function Subscriptions() {
             Cancelar
           </Button>
           <Button onClick={handleSubmit}>
-            {editingSub ? 'Guardar cambios' : 'Añadir suscripción'}
+            {editingSub ? 'Guardar cambios' : 'Añadir'}
           </Button>
         </div>
       </Modal>

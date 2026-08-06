@@ -12,26 +12,68 @@
   margin: 0;
 }
 
-.monthly-total {
+.totals-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.total-box {
   background: white;
   border-radius: 12px;
   padding: 1.25rem 1.5rem;
   border: 1px solid #f1f5f9;
-  margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 1rem;
+}
+
+.total-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.total-income .total-icon {
+  background: #f0fdf4;
+  color: #22c55e;
+}
+.total-expense .total-icon {
+  background: #fef2f2;
+  color: #ef4444;
 }
 
 .total-label {
-  font-size: 0.875rem;
+  display: block;
+  font-size: 0.8125rem;
   color: #64748b;
+  margin-bottom: 0.25rem;
 }
 
 .total-value {
-  font-size: 1.25rem;
+  display: block;
+  font-size: 1.375rem;
   font-weight: 700;
-  color: #3b82f6;
+}
+
+.positive { color: #22c55e; }
+.negative { color: #ef4444; }
+
+.section {
+  margin-bottom: 1.5rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 1rem 0;
 }
 
 .grid {
@@ -54,6 +96,12 @@
 }
 .sub-card.inactive {
   opacity: 0.5;
+}
+.sub-income {
+  border-left: 3px solid #22c55e;
+}
+.sub-expense {
+  border-left: 3px solid #ef4444;
 }
 
 .sub-header {
@@ -90,7 +138,6 @@
 .sub-amount {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1e293b;
 }
 
 .sub-details {
@@ -159,6 +206,40 @@
   color: #16a34a;
 }
 
+.type-toggle {
+  display: flex;
+  gap: 0;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.type-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem;
+  border: none;
+  background: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Inter', sans-serif;
+  color: #64748b;
+}
+.type-btn.active-income {
+  background: #22c55e;
+  color: white;
+}
+.type-btn.active-expense {
+  background: #ef4444;
+  color: white;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -196,7 +277,6 @@
 }
 
 .empty-state {
-  grid-column: 1 / -1;
   text-align: center;
   padding: 3rem;
   color: #94a3b8;
@@ -205,4 +285,10 @@
 .empty-icon {
   margin-bottom: 1rem;
   color: #cbd5e1;
+}
+
+@media (max-width: 640px) {
+  .totals-row {
+    grid-template-columns: 1fr;
+  }
 }

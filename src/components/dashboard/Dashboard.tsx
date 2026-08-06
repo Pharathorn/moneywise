@@ -22,11 +22,15 @@ export function Dashboard() {
       .filter((t) => t.type === 'expense')
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const monthlySubscriptions = state.subscriptions
-      .filter((s) => s.active)
+    const recurringIncome = state.subscriptions
+      .filter((s) => s.active && s.type === 'income')
       .reduce((sum, s) => sum + getMonthlyAmount(s.amount, s.billingCycle), 0);
 
-    return { income, expenses, balance: income - expenses, monthlySubscriptions };
+    const recurringExpenses = state.subscriptions
+      .filter((s) => s.active && s.type === 'expense')
+      .reduce((sum, s) => sum + getMonthlyAmount(s.amount, s.billingCycle), 0);
+
+    return { income, expenses, balance: income - expenses, recurringIncome, recurringExpenses };
   }, [monthTransactions, state.subscriptions]);
 
   const categoryData = useMemo(() => {
@@ -116,9 +120,13 @@ export function Dashboard() {
         </div>
         <div className={styles['summary-card']}>
           <p className={styles['summary-label']}>
-            <CreditCard size={16} /> Suscripciones
+            <CreditCard size={16} /> Recurrentes
           </p>
-          <p className={`${styles['summary-value']} ${styles.neutral}`}>{formatCurrency(summary.monthlySubscriptions)}</p>
+          <p className={`${styles['summary-value']} ${styles.neutral}`}>
+            <span style={{ color: '#22c55e', fontSize: '0.875rem' }}>+{formatCurrency(summary.recurringIncome)}</span>
+            {' / '}
+            <span style={{ color: '#ef4444', fontSize: '0.875rem' }}>-{formatCurrency(summary.recurringExpenses)}</span>
+          </p>
         </div>
       </div>
 
@@ -207,7 +215,7 @@ export function Dashboard() {
         </div>
 
         <div className={styles['recent-card']}>
-          <h3 className={styles['recent-title']}>Próximas suscripciones</h3>
+          <h3 className={styles['recent-title']}>Próximos cobros/ingresos</h3>
           {upcomingSubscriptions.length > 0 ? (
             upcomingSubscriptions.map((s) => (
               <div key={s.id} className={styles['subscription-item']}>
@@ -215,14 +223,18 @@ export function Dashboard() {
                   <div className={styles['subscription-dot']} style={{ background: s.color }} />
                   <div>
                     <div className={styles['subscription-name']}>{s.name}</div>
-                    <div className={styles['subscription-date']}>{s.nextPayment}</div>
+                    <div className={styles['subscription-date']}>
+                      {s.type === 'income' ? 'Ingreso' : 'Gasto'} · {s.nextPayment}
+                    </div>
                   </div>
                 </div>
-                <span className={styles['subscription-amount']}>{formatCurrency(s.amount)}</span>
+                <span className={`${styles['subscription-amount']}`} style={{ color: s.type === 'income' ? '#22c55e' : '#1e293b' }}>
+                  {s.type === 'income' ? '+' : '-'}{formatCurrency(s.amount)}
+                </span>
               </div>
             ))
           ) : (
-            <div className={styles['empty-message']}>Sin suscripciones activas</div>
+            <div className={styles['empty-message']}>Sin recurrentes próximos</div>
           )}
         </div>
       </div>

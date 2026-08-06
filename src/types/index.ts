@@ -13,6 +13,7 @@ export interface Transaction {
 
 export interface Subscription {
   id: string;
+  type: TransactionType;
   name: string;
   amount: number;
   billingCycle: 'monthly' | 'yearly' | 'weekly';
