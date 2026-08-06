@@ -30,6 +30,8 @@ export function Subscriptions() {
     category: '',
     color: COLORS[0],
     active: true,
+    accountId: '',
+    image: '',
   });
 
   const monthlyExpenseTotal = useMemo(
@@ -63,6 +65,11 @@ export function Subscriptions() {
     [state.categories, form.type]
   );
 
+  const activeAccounts = useMemo(
+    () => state.accounts.filter((a) => a.active),
+    [state.accounts]
+  );
+
   const openCreateModal = () => {
     setEditingSub(null);
     setForm({
@@ -74,6 +81,8 @@ export function Subscriptions() {
       category: '',
       color: COLORS[0],
       active: true,
+      accountId: '',
+      image: '',
     });
     setIsModalOpen(true);
   };
@@ -89,6 +98,8 @@ export function Subscriptions() {
       category: s.category,
       color: s.color,
       active: s.active,
+      accountId: s.accountId || '',
+      image: s.image || '',
     });
     setIsModalOpen(true);
   };
@@ -106,6 +117,8 @@ export function Subscriptions() {
       category: form.category,
       color: form.color,
       active: form.active,
+      accountId: form.accountId || undefined,
+      image: form.image || undefined,
     };
 
     if (editingSub) {
@@ -119,6 +132,12 @@ export function Subscriptions() {
 
   const handleDelete = (id: string) => {
     dispatch({ type: 'DELETE_SUBSCRIPTION', payload: id });
+  };
+
+  const getAccountName = (accountId?: string) => {
+    if (!accountId) return null;
+    const account = state.accounts.find((a) => a.id === accountId);
+    return account?.name || null;
   };
 
   const incomeSubs = sortedSubscriptions.filter((s) => s.type === 'income');
@@ -164,14 +183,24 @@ export function Subscriptions() {
             {incomeSubs.map((s) => {
               const days = getDaysUntil(s.nextPayment);
               const cat = state.categories.find((c) => c.id === s.category);
+              const accountName = getAccountName(s.accountId);
               return (
                 <div key={s.id} className={`${styles['sub-card']} ${styles['sub-income']} ${!s.active ? styles.inactive : ''}`}>
                   <div className={styles['sub-header']}>
                     <div className={styles['sub-info']}>
-                      <div className={styles['sub-dot']} style={{ background: s.color }} />
+                      {s.image ? (
+                        <div className={styles['sub-image']}>
+                          <img src={s.image} alt="" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                        </div>
+                      ) : (
+                        <div className={styles['sub-dot']} style={{ background: s.color }} />
+                      )}
                       <div>
                         <div className={styles['sub-name']}>{s.name}</div>
-                        <div className={styles['sub-category']}>{cat?.name || ''}</div>
+                        <div className={styles['sub-category']}>
+                          {cat?.name || ''}
+                          {accountName && <span style={{ color: '#3b82f6' }}> · {accountName}</span>}
+                        </div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
@@ -219,14 +248,24 @@ export function Subscriptions() {
             {expenseSubs.map((s) => {
               const days = getDaysUntil(s.nextPayment);
               const cat = state.categories.find((c) => c.id === s.category);
+              const accountName = getAccountName(s.accountId);
               return (
                 <div key={s.id} className={`${styles['sub-card']} ${styles['sub-expense']} ${!s.active ? styles.inactive : ''}`}>
                   <div className={styles['sub-header']}>
                     <div className={styles['sub-info']}>
-                      <div className={styles['sub-dot']} style={{ background: s.color }} />
+                      {s.image ? (
+                        <div className={styles['sub-image']}>
+                          <img src={s.image} alt="" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                        </div>
+                      ) : (
+                        <div className={styles['sub-dot']} style={{ background: s.color }} />
+                      )}
                       <div>
                         <div className={styles['sub-name']}>{s.name}</div>
-                        <div className={styles['sub-category']}>{cat?.name || ''}</div>
+                        <div className={styles['sub-category']}>
+                          {cat?.name || ''}
+                          {accountName && <span style={{ color: '#3b82f6' }}> · {accountName}</span>}
+                        </div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
@@ -328,16 +367,43 @@ export function Subscriptions() {
           onChange={(e) => setForm({ ...form, nextPayment: e.target.value })}
         />
 
-        <Select
-          label="Categoría"
-          value={form.category}
-          onChange={(e) => setForm({ ...form, category: e.target.value })}
-        >
-          <option value="">Seleccionar categoría</option>
-          {filteredCategories.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </Select>
+        <div className={styles['form-grid']}>
+          <Select
+            label="Categoría"
+            value={form.category}
+            onChange={(e) => setForm({ ...form, category: e.target.value })}
+          >
+            <option value="">Seleccionar categoría</option>
+            {filteredCategories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </Select>
+
+          {activeAccounts.length > 0 && (
+            <Select
+              label="Cuenta"
+              value={form.accountId}
+              onChange={(e) => setForm({ ...form, accountId: e.target.value })}
+            >
+              <option value="">Sin cuenta</option>
+              {activeAccounts.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </Select>
+          )}
+        </div>
+
+        <Input
+          label="Imagen (URL)"
+          value={form.image}
+          onChange={(e) => setForm({ ...form, image: e.target.value })}
+          placeholder="https://ejemplo.com/logo.png"
+        />
+        {form.image && (
+          <div className={styles['image-preview']}>
+            <img src={form.image} alt="Preview" onError={(e) => (e.currentTarget.style.display = 'none')} />
+          </div>
+        )}
 
         <div className={styles['form-grid']}>
           <div>

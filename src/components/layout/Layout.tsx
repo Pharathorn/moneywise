@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, ArrowLeftRight, CreditCard, Settings, Menu, X } from 'lucide-react';
+import { LayoutDashboard, ArrowLeftRight, CreditCard, Wallet, Settings, Menu, X } from 'lucide-react';
 import styles from './Layout.module.css';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/accounts', icon: Wallet, label: 'Cuentas' },
   { to: '/transactions', icon: ArrowLeftRight, label: 'Transacciones' },
   { to: '/subscriptions', icon: CreditCard, label: 'Suscripciones' },
   { to: '/settings', icon: Settings, label: 'Ajustes' },

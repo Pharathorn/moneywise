@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { TrendingUp, TrendingDown, Wallet, CreditCard } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, CreditCard, Landmark } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useApp } from '../../context/AppContext';
 import { formatCurrency, getCurrentMonthKey, getMonthlyAmount } from '../../utils/formatters';
@@ -32,6 +32,21 @@ export function Dashboard() {
 
     return { income, expenses, balance: income - expenses, recurringIncome, recurringExpenses };
   }, [monthTransactions, state.subscriptions]);
+
+  const accountsSummary = useMemo(() => {
+    return state.accounts
+      .filter((a) => a.active)
+      .map((account) => {
+        const accountTransactions = monthTransactions.filter((t) => t.accountId === account.id);
+        const income = accountTransactions
+          .filter((t) => t.type === 'income')
+          .reduce((sum, t) => sum + t.amount, 0);
+        const expenses = accountTransactions
+          .filter((t) => t.type === 'expense')
+          .reduce((sum, t) => sum + t.amount, 0);
+        return { ...account, income, expenses, balance: income - expenses };
+      });
+  }, [state.accounts, monthTransactions]);
 
   const categoryData = useMemo(() => {
     const byCategory: Record<string, number> = {};
@@ -130,6 +145,45 @@ export function Dashboard() {
         </div>
       </div>
 
+      {accountsSummary.length > 0 && (
+        <div className={styles['accounts-section']}>
+          <h3 className={styles['section-title']}>
+            <Landmark size={18} />
+            Cuentas bancarias
+          </h3>
+          <div className={styles['accounts-grid']}>
+            {accountsSummary.map((account) => (
+              <div key={account.id} className={styles['account-card']}>
+                <div className={styles['account-header']}>
+                  <div className={styles['account-info']}>
+                    <div className={styles['account-logo']} style={{ background: `${account.color}15` }}>
+                      {account.image ? (
+                        <img src={account.image} alt="" />
+                      ) : (
+                        <span style={{ color: account.color, fontWeight: 700 }}>
+                          {account.bank.substring(0, 1).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <div className={styles['account-name']}>{account.name}</div>
+                      <div className={styles['account-bank']}>{account.bank}</div>
+                    </div>
+                  </div>
+                  <div className={styles['account-balance']} style={{ color: account.balance >= 0 ? '#22c55e' : '#ef4444' }}>
+                    {formatCurrency(account.balance)}
+                  </div>
+                </div>
+                <div className={styles['account-stats']}>
+                  <span className={styles['account-income']}>+{formatCurrency(account.income)}</span>
+                  <span className={styles['account-expense']}>-{formatCurrency(account.expenses)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className={styles['charts-grid']}>
         <div className={styles['chart-card']}>
           <h3 className={styles['chart-title']}>Ingresos vs Gastos (6 meses)</h3>
@@ -190,14 +244,20 @@ export function Dashboard() {
               return (
                 <div key={t.id} className={styles['transaction-item']}>
                   <div className={styles['transaction-left']}>
-                    <div
-                      className={styles['transaction-icon']}
-                      style={{ background: cat ? `${cat.color}15` : '#f1f5f9' }}
-                    >
-                      <span style={{ color: cat?.color || '#94a3b8', fontSize: '0.7rem', fontWeight: 600 }}>
-                        {cat?.name?.substring(0, 2).toUpperCase() || 'OT'}
-                      </span>
-                    </div>
+                    {t.image ? (
+                      <div className={styles['transaction-image']}>
+                        <img src={t.image} alt="" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                      </div>
+                    ) : (
+                      <div
+                        className={styles['transaction-icon']}
+                        style={{ background: cat ? `${cat.color}15` : '#f1f5f9' }}
+                      >
+                        <span style={{ color: cat?.color || '#94a3b8', fontSize: '0.7rem', fontWeight: 600 }}>
+                          {cat?.name?.substring(0, 2).toUpperCase() || 'OT'}
+                        </span>
+                      </div>
+                    )}
                     <div>
                       <div className={styles['transaction-name']}>{t.description}</div>
                       <div className={styles['transaction-category']}>{cat?.name || 'Sin categoría'}</div>
@@ -220,7 +280,13 @@ export function Dashboard() {
             upcomingSubscriptions.map((s) => (
               <div key={s.id} className={styles['subscription-item']}>
                 <div className={styles['subscription-left']}>
-                  <div className={styles['subscription-dot']} style={{ background: s.color }} />
+                  {s.image ? (
+                    <div className={styles['subscription-image']}>
+                      <img src={s.image} alt="" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                    </div>
+                  ) : (
+                    <div className={styles['subscription-dot']} style={{ background: s.color }} />
+                  )}
                   <div>
                     <div className={styles['subscription-name']}>{s.name}</div>
                     <div className={styles['subscription-date']}>

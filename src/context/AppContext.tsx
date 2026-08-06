@@ -7,6 +7,7 @@ const initialState: AppState = {
   transactions: [],
   subscriptions: [],
   categories: defaultCategories,
+  accounts: [],
 };
 
 function appReducer(state: AppState, action: AppAction): AppState {
@@ -52,6 +53,20 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         categories: state.categories.filter((c) => c.id !== action.payload),
+      };
+    case 'ADD_ACCOUNT':
+      return { ...state, accounts: [...state.accounts, action.payload] };
+    case 'UPDATE_ACCOUNT':
+      return {
+        ...state,
+        accounts: state.accounts.map((a) =>
+          a.id === action.payload.id ? action.payload : a
+        ),
+      };
+    case 'DELETE_ACCOUNT':
+      return {
+        ...state,
+        accounts: state.accounts.filter((a) => a.id !== action.payload),
       };
     case 'LOAD_DATA':
       return action.payload;

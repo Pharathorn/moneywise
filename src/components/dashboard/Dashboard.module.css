@@ -32,6 +32,97 @@
 .summary-value.negative { color: #ef4444; }
 .summary-value.neutral { color: #3b82f6; }
 
+.accounts-section {
+  margin-bottom: 1.5rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 1rem 0;
+}
+
+.accounts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.account-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1px solid #f1f5f9;
+}
+
+.account-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.account-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.account-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  overflow: hidden;
+}
+.account-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.account-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.account-bank {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.account-balance {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.account-stats {
+  display: flex;
+  gap: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f8fafc;
+  font-size: 0.8125rem;
+}
+
+.account-income {
+  color: #22c55e;
+  font-weight: 500;
+}
+
+.account-expense {
+  color: #ef4444;
+  font-weight: 500;
+}
+
 .charts-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -102,6 +193,23 @@
   font-size: 0.75rem;
 }
 
+.transaction-image {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.transaction-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .transaction-name {
   font-size: 0.875rem;
   font-weight: 500;
@@ -139,6 +247,23 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
+}
+
+.subscription-image {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.subscription-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .subscription-name {
@@ -179,6 +304,9 @@
 
 @media (max-width: 640px) {
   .summary-grid {
+    grid-template-columns: 1fr;
+  }
+  .accounts-grid {
     grid-template-columns: 1fr;
   }
 }

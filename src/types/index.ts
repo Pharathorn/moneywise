@@ -1,5 +1,15 @@
 export type TransactionType = 'income' | 'expense';
 
+export interface Account {
+  id: string;
+  name: string;
+  bank: string;
+  color: string;
+  icon: string;
+  image?: string;
+  active: boolean;
+}
+
 export interface Transaction {
   id: string;
   type: TransactionType;
@@ -9,6 +19,8 @@ export interface Transaction {
   date: string;
   recurring: boolean;
   subscriptionId?: string;
+  accountId?: string;
+  image?: string;
 }
 
 export interface Subscription {
@@ -21,6 +33,8 @@ export interface Subscription {
   category: string;
   color: string;
   active: boolean;
+  accountId?: string;
+  image?: string;
 }
 
 export interface Category {
@@ -29,6 +43,7 @@ export interface Category {
   icon: string;
   color: string;
   type: TransactionType;
+  image?: string;
 }
 
 export interface MonthSummary {
@@ -49,10 +64,14 @@ export type AppAction =
   | { type: 'ADD_CATEGORY'; payload: Category }
   | { type: 'UPDATE_CATEGORY'; payload: Category }
   | { type: 'DELETE_CATEGORY'; payload: string }
+  | { type: 'ADD_ACCOUNT'; payload: Account }
+  | { type: 'UPDATE_ACCOUNT'; payload: Account }
+  | { type: 'DELETE_ACCOUNT'; payload: string }
   | { type: 'LOAD_DATA'; payload: AppState };
 
 export interface AppState {
   transactions: Transaction[];
   subscriptions: Subscription[];
   categories: Category[];
+  accounts: Account[];
 }
