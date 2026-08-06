@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { TrendingUp, TrendingDown, Wallet, CreditCard, Landmark } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, CreditCard, Landmark, Home } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useApp } from '../../context/DataContext';
 import { formatCurrency, getCurrentMonthKey, getMonthlyAmount } from '../../utils/formatters';
@@ -27,10 +27,14 @@ export function Dashboard() {
       .reduce((sum, s) => sum + getMonthlyAmount(s.amount, s.billingCycle), 0);
 
     const recurringExpenses = state.subscriptions
-      .filter((s) => s.active && s.type === 'expense')
+      .filter((s) => s.active && s.type === 'expense' && s.section !== 'housing')
       .reduce((sum, s) => sum + getMonthlyAmount(s.amount, s.billingCycle), 0);
 
-    return { income, expenses, balance: income - expenses, recurringIncome, recurringExpenses };
+    const housingExpenses = state.subscriptions
+      .filter((s) => s.active && s.section === 'housing')
+      .reduce((sum, s) => sum + getMonthlyAmount(s.amount, s.billingCycle), 0);
+
+    return { income, expenses, balance: income - expenses, recurringIncome, recurringExpenses, housingExpenses };
   }, [monthTransactions, state.subscriptions]);
 
   const accountsSummary = useMemo(() => {
@@ -95,7 +99,7 @@ export function Dashboard() {
       state.subscriptions
         .filter((s) => s.active)
         .sort((a, b) => new Date(a.nextPayment).getTime() - new Date(b.nextPayment).getTime())
-        .slice(0, 5),
+        .slice(0, 8),
     [state.subscriptions]
   );
 
@@ -142,6 +146,12 @@ export function Dashboard() {
             {' / '}
             <span style={{ color: '#ef4444', fontSize: '0.875rem' }}>-{formatCurrency(summary.recurringExpenses)}</span>
           </p>
+        </div>
+        <div className={styles['summary-card']}>
+          <p className={styles['summary-label']}>
+            <Home size={16} /> Vivienda
+          </p>
+          <p className={`${styles['summary-value']} ${styles.negative}`}>{formatCurrency(summary.housingExpenses)}</p>
         </div>
       </div>
 
@@ -288,7 +298,12 @@ export function Dashboard() {
                     <div className={styles['subscription-dot']} style={{ background: s.color }} />
                   )}
                   <div>
-                    <div className={styles['subscription-name']}>{s.name}</div>
+                    <div className={styles['subscription-name']}>
+                      {s.name}
+                      {s.section === 'housing' && (
+                        <span style={{ marginLeft: '0.375rem', fontSize: '0.6875rem', color: '#8b5cf6', background: '#f5f3ff', padding: '0.125rem 0.375rem', borderRadius: '4px', fontWeight: 500 }}>Casa</span>
+                      )}
+                    </div>
                     <div className={styles['subscription-date']}>
                       {s.type === 'income' ? 'Ingreso' : 'Gasto'} · {s.nextPayment}
                     </div>

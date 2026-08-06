@@ -59,18 +59,41 @@ export function Housing() {
     if (!config) return null;
     const monthsPaid = monthsBetween(config.startDate, new Date());
     const totalPayments = config.termMonths;
-    const capitalPaid = monthsPaid * config.monthlyPayment;
-    const remaining = Math.max(0, config.totalCapital - capitalPaid);
-    const percentPaid = Math.min(100, (monthsPaid / totalPayments) * 100);
+    const effectiveMonthsPaid = Math.min(monthsPaid, totalPayments);
+
+    let remaining: number;
+    let capitalPaid: number;
+    let totalInterestPaid: number;
+
+    if (config.interestRate && config.interestRate > 0) {
+      const r = config.interestRate / 100 / 12;
+      const factorN = Math.pow(1 + r, totalPayments);
+      const factorNpaid = Math.pow(1 + r, effectiveMonthsPaid);
+
+      // Fórmula de amortización francesa
+      remaining = config.totalCapital * factorNpaid - config.monthlyPayment * (factorNpaid - 1) / r;
+      remaining = Math.max(0, remaining);
+
+      const totalPaid = effectiveMonthsPaid * config.monthlyPayment;
+      capitalPaid = config.totalCapital - remaining;
+      totalInterestPaid = totalPaid - capitalPaid;
+    } else {
+      capitalPaid = effectiveMonthsPaid * config.monthlyPayment;
+      remaining = Math.max(0, config.totalCapital - capitalPaid);
+      totalInterestPaid = 0;
+    }
+
+    const percentPaid = Math.min(100, (effectiveMonthsPaid / totalPayments) * 100);
     const endDate = new Date(config.startDate);
     endDate.setMonth(endDate.getMonth() + totalPayments);
 
     return {
-      monthsPaid: Math.min(monthsPaid, totalPayments),
+      monthsPaid: effectiveMonthsPaid,
       totalPayments,
       capitalPaid,
       remaining,
       percentPaid,
+      totalInterestPaid,
       endDate: endDate.toISOString().split('T')[0],
     };
   }, [config]);
@@ -267,6 +290,12 @@ export function Housing() {
                 <div className={styles['detail-item']}>
                   <span className={styles['detail-label']}>Interés</span>
                   <span className={styles['detail-value']}>{config.interestRate}%</span>
+                </div>
+              )}
+              {mortgageStats.totalInterestPaid > 0 && (
+                <div className={styles['detail-item']}>
+                  <span className={styles['detail-label']}>Intereses pagados</span>
+                  <span className={styles['detail-value']} style={{ color: '#ef4444' }}>{formatCurrency(mortgageStats.totalInterestPaid)}</span>
                 </div>
               )}
             </div>
