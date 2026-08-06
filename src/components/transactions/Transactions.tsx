@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Plus, Pencil, Trash2, Search, ArrowLeftRight, Image as ImageIcon } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, ArrowLeftRight, ArrowRightLeft } from 'lucide-react';
 import { useApp } from '../../context/DataContext';
-import { Transaction, TransactionType } from '../../types';
+import { Transaction, TransactionType, PaymentMethod, PAYMENT_METHODS } from '../../types';
 import { formatCurrency, formatDate, generateId } from '../../utils/formatters';
 import { Button } from '../ui/Button';
 import { Input, Select } from '../ui/Input';
@@ -25,6 +25,8 @@ export function Transactions() {
     date: new Date().toISOString().split('T')[0],
     recurring: false,
     accountId: '',
+    toAccountId: '',
+    paymentMethod: 'card' as PaymentMethod,
     image: '',
   });
 
@@ -33,7 +35,7 @@ export function Transactions() {
       .filter((t) => {
         if (filterType !== 'all' && t.type !== filterType) return false;
         if (filterCategory !== 'all' && t.category !== filterCategory) return false;
-        if (filterAccount !== 'all' && t.accountId !== filterAccount) return false;
+        if (filterAccount !== 'all' && t.accountId !== filterAccount && t.toAccountId !== filterAccount) return false;
         if (searchTerm && !t.description.toLowerCase().includes(searchTerm.toLowerCase())) return false;
         return true;
       })
@@ -41,18 +43,23 @@ export function Transactions() {
   }, [state.transactions, filterType, filterCategory, filterAccount, searchTerm]);
 
   const categories = useMemo(
-    () => state.categories.filter((c) => c.type === form.type),
+    () => state.categories.filter((c) => c.type === (form.type === 'transfer' ? 'expense' : form.type)),
     [state.categories, form.type]
   );
 
   const filterCategories = useMemo(
-    () => state.categories.filter((c) => filterType === 'all' || c.type === filterType),
+    () => state.categories.filter((c) => filterType === 'all' || filterType === 'transfer' || c.type === filterType),
     [state.categories, filterType]
   );
 
   const activeAccounts = useMemo(
     () => state.accounts.filter((a) => a.active),
     [state.accounts]
+  );
+
+  const destinationAccounts = useMemo(
+    () => activeAccounts.filter((a) => a.id !== form.accountId),
+    [activeAccounts, form.accountId]
   );
 
   const openCreateModal = () => {
@@ -65,6 +72,8 @@ export function Transactions() {
       date: new Date().toISOString().split('T')[0],
       recurring: false,
       accountId: '',
+      toAccountId: '',
+      paymentMethod: 'card',
       image: '',
     });
     setIsModalOpen(true);
@@ -80,24 +89,30 @@ export function Transactions() {
       date: t.date,
       recurring: t.recurring,
       accountId: t.accountId || '',
+      toAccountId: t.toAccountId || '',
+      paymentMethod: t.paymentMethod || 'card',
       image: t.image || '',
     });
     setIsModalOpen(true);
   };
 
   const handleSubmit = () => {
-    if (!form.amount || !form.description || !form.category) return;
+    if (!form.amount || !form.description) return;
+    if (form.type !== 'transfer' && !form.category) return;
+    if (form.type === 'transfer' && (!form.accountId || !form.toAccountId)) return;
 
     const transaction: Transaction = {
       id: editingTransaction?.id || generateId(),
       type: form.type,
       amount: parseFloat(form.amount),
       description: form.description,
-      category: form.category,
+      category: form.type === 'transfer' ? 'transfer' : form.category,
       date: form.date,
       recurring: form.recurring,
       subscriptionId: editingTransaction?.subscriptionId,
       accountId: form.accountId || undefined,
+      toAccountId: form.type === 'transfer' ? form.toAccountId : undefined,
+      paymentMethod: form.type !== 'transfer' ? form.paymentMethod : undefined,
       image: form.image || undefined,
     };
 
@@ -118,6 +133,11 @@ export function Transactions() {
     if (!accountId) return null;
     const account = state.accounts.find((a) => a.id === accountId);
     return account?.name || null;
+  };
+
+  const getPaymentMethodLabel = (method?: PaymentMethod) => {
+    if (!method) return null;
+    return PAYMENT_METHODS.find((m) => m.value === method)?.label || method;
   };
 
   return (
@@ -148,17 +168,20 @@ export function Transactions() {
           <option value="all">Todos los tipos</option>
           <option value="income">Ingresos</option>
           <option value="expense">Gastos</option>
+          <option value="transfer">Transferencias</option>
         </select>
-        <select
-          className={styles['filter-input']}
-          value={filterCategory}
-          onChange={(e) => setFilterCategory(e.target.value)}
-        >
-          <option value="all">Todas las categorías</option>
-          {filterCategories.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
+        {filterType !== 'transfer' && (
+          <select
+            className={styles['filter-input']}
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+          >
+            <option value="all">Todas las categorías</option>
+            {filterCategories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        )}
         {activeAccounts.length > 0 && (
           <select
             className={styles['filter-input']}
@@ -178,12 +201,19 @@ export function Transactions() {
           filteredTransactions.map((t) => {
             const cat = state.categories.find((c) => c.id === t.category);
             const accountName = getAccountName(t.accountId);
+            const toAccountName = getAccountName(t.toAccountId);
+            const paymentLabel = getPaymentMethodLabel(t.paymentMethod);
+
             return (
               <div key={t.id} className={styles['transaction-row']}>
                 <div className={styles['transaction-left']}>
                   {t.image ? (
                     <div className={styles['transaction-image']}>
                       <img src={t.image} alt="" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                    </div>
+                  ) : t.type === 'transfer' ? (
+                    <div className={styles['transfer-icon']}>
+                      <ArrowRightLeft size={18} />
                     </div>
                   ) : (
                     <div
@@ -198,22 +228,40 @@ export function Transactions() {
                   <div className={styles['transaction-info']}>
                     <span className={styles['transaction-desc']}>{t.description}</span>
                     <div className={styles['transaction-meta']}>
-                      <span>{cat?.name || 'Sin categoría'}</span>
-                      {accountName && (
+                      {t.type === 'transfer' ? (
+                        <span style={{ color: '#3b82f6' }}>
+                          {accountName || 'Sin cuenta'} → {toAccountName || 'Sin cuenta'}
+                        </span>
+                      ) : (
                         <>
-                          <span>•</span>
-                          <span style={{ color: '#3b82f6' }}>{accountName}</span>
+                          <span>{cat?.name || 'Sin categoría'}</span>
+                          {accountName && (
+                            <>
+                              <span>·</span>
+                              <span style={{ color: '#3b82f6' }}>{accountName}</span>
+                            </>
+                          )}
+                          {paymentLabel && (
+                            <>
+                              <span>·</span>
+                              <span>{paymentLabel}</span>
+                            </>
+                          )}
                         </>
                       )}
-                      <span>•</span>
+                      <span>·</span>
                       <span>{formatDate(t.date)}</span>
                       {t.recurring && <span>🔄</span>}
                     </div>
                   </div>
                 </div>
                 <div className={styles['transaction-right']}>
-                  <span className={`${styles['transaction-amount']} ${t.type === 'income' ? styles.income : styles.expense}`}>
-                    {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+                  <span className={`${styles['transaction-amount']} ${
+                    t.type === 'income' ? styles.income :
+                    t.type === 'transfer' ? '' :
+                    styles.expense
+                  }`} style={t.type === 'transfer' ? { color: '#3b82f6' } : undefined}>
+                    {t.type === 'income' ? '+' : t.type === 'transfer' ? '↔' : '-'}{formatCurrency(t.amount)}
                   </span>
                   <div className={styles['transaction-actions']}>
                     <button className={styles['action-btn']} onClick={() => openEditModal(t)}>
@@ -253,6 +301,12 @@ export function Transactions() {
           >
             Ingreso
           </button>
+          <button
+            className={`${styles['type-btn']} ${form.type === 'transfer' ? styles['active-transfer'] : ''}`}
+            onClick={() => setForm({ ...form, type: 'transfer', category: 'transfer' })}
+          >
+            Transferencia
+          </button>
         </div>
 
         <div className={styles['form-grid']}>
@@ -277,55 +331,90 @@ export function Transactions() {
           label="Descripción"
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
-          placeholder="Ej: Compra supermercado"
+          placeholder={form.type === 'transfer' ? 'Ej: Transferencia a ahorros' : 'Ej: Compra supermercado'}
         />
 
-        <div className={styles['form-grid']}>
-          <Select
-            label="Categoría"
-            value={form.category}
-            onChange={(e) => setForm({ ...form, category: e.target.value })}
-          >
-            <option value="">Seleccionar categoría</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </Select>
-
-          {activeAccounts.length > 0 && (
+        {form.type === 'transfer' ? (
+          <div className={styles['form-grid']}>
             <Select
-              label="Cuenta"
+              label="Cuenta origen"
               value={form.accountId}
-              onChange={(e) => setForm({ ...form, accountId: e.target.value })}
+              onChange={(e) => setForm({ ...form, accountId: e.target.value, toAccountId: '' })}
             >
-              <option value="">Sin cuenta</option>
+              <option value="">Seleccionar cuenta</option>
               {activeAccounts.map((a) => (
                 <option key={a.id} value={a.id}>{a.name}</option>
               ))}
             </Select>
-          )}
-        </div>
+            <Select
+              label="Cuenta destino"
+              value={form.toAccountId}
+              onChange={(e) => setForm({ ...form, toAccountId: e.target.value })}
+            >
+              <option value="">Seleccionar cuenta</option>
+              {destinationAccounts.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </Select>
+          </div>
+        ) : (
+          <div className={styles['form-grid']}>
+            <Select
+              label="Categoría"
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+            >
+              <option value="">Seleccionar categoría</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </Select>
 
-        <div className={styles['form-grid']}>
-          <Input
-            label="Imagen (URL)"
-            value={form.image}
-            onChange={(e) => setForm({ ...form, image: e.target.value })}
-            placeholder="https://ejemplo.com/logo.png"
-          />
-          {form.image && (
-            <div className={styles['image-preview']}>
-              <img src={form.image} alt="Preview" onError={(e) => (e.currentTarget.style.display = 'none')} />
-            </div>
-          )}
-        </div>
+            {activeAccounts.length > 0 && (
+              <Select
+                label="Cuenta"
+                value={form.accountId}
+                onChange={(e) => setForm({ ...form, accountId: e.target.value })}
+              >
+                <option value="">Sin cuenta</option>
+                {activeAccounts.map((a) => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </Select>
+            )}
+          </div>
+        )}
+
+        {form.type !== 'transfer' && (
+          <Select
+            label="Método de pago"
+            value={form.paymentMethod}
+            onChange={(e) => setForm({ ...form, paymentMethod: e.target.value as PaymentMethod })}
+          >
+            {PAYMENT_METHODS.map((m) => (
+              <option key={m.value} value={m.value}>{m.label}</option>
+            ))}
+          </Select>
+        )}
+
+        <Input
+          label="Imagen (URL)"
+          value={form.image}
+          onChange={(e) => setForm({ ...form, image: e.target.value })}
+          placeholder="https://ejemplo.com/logo.png"
+        />
+        {form.image && (
+          <div className={styles['image-preview']}>
+            <img src={form.image} alt="Preview" onError={(e) => (e.currentTarget.style.display = 'none')} />
+          </div>
+        )}
 
         <div className={styles['form-actions']}>
           <Button variant="secondary" onClick={() => setIsModalOpen(false)}>
             Cancelar
           </Button>
           <Button onClick={handleSubmit}>
-            {editingTransaction ? 'Guardar cambios' : 'Añadir transacción'}
+            {editingTransaction ? 'Guardar cambios' : form.type === 'transfer' ? 'Añadir transferencia' : 'Añadir transacción'}
           </Button>
         </div>
       </Modal>

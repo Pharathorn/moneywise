@@ -1,4 +1,13 @@
-export type TransactionType = 'income' | 'expense';
+export type TransactionType = 'income' | 'expense' | 'transfer';
+export type PaymentMethod = 'card' | 'cash' | 'bizum' | 'transfer' | 'other';
+
+export const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
+  { value: 'card', label: 'Tarjeta' },
+  { value: 'cash', label: 'Efectivo' },
+  { value: 'bizum', label: 'Bizum' },
+  { value: 'transfer', label: 'Transferencia' },
+  { value: 'other', label: 'Otro' },
+];
 
 export interface Account {
   id: string;
@@ -21,6 +30,8 @@ export interface Transaction {
   recurring: boolean;
   subscriptionId?: string;
   accountId?: string;
+  toAccountId?: string;
+  paymentMethod?: PaymentMethod;
   image?: string;
 }
 
@@ -35,6 +46,8 @@ export interface Subscription {
   color: string;
   active: boolean;
   accountId?: string;
+  toAccountId?: string;
+  paymentMethod?: PaymentMethod;
   image?: string;
 }
 
@@ -43,7 +56,7 @@ export interface Category {
   name: string;
   icon: string;
   color: string;
-  type: TransactionType;
+  type: 'income' | 'expense';
   image?: string;
 }
 

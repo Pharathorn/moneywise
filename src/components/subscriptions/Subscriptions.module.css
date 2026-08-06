@@ -140,6 +140,18 @@
   border-radius: 50%;
 }
 
+.sub-transfer {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #3b82f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .sub-name {
   font-size: 1rem;
   font-weight: 600;
@@ -254,6 +266,10 @@
 }
 .type-btn.active-expense {
   background: #ef4444;
+  color: white;
+}
+.type-btn.active-transfer {
+  background: #3b82f6;
   color: white;
 }
 

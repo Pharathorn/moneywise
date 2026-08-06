@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
-import { AppState, AppAction, Account, Transaction, Subscription, Category } from '../types';
+import { AppState, AppAction, Account, Transaction, Subscription, Category, TransactionType, PaymentMethod } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { defaultCategories } from '../utils/categories';
 import { supabase } from '../lib/supabase';
@@ -100,7 +100,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 function rowToTransaction(row: Record<string, unknown>): Transaction {
   return {
     id: row.id as string,
-    type: row.type as 'income' | 'expense',
+    type: row.type as TransactionType,
     amount: Number(row.amount),
     description: row.description as string,
     category: row.category as string,
@@ -108,6 +108,8 @@ function rowToTransaction(row: Record<string, unknown>): Transaction {
     recurring: row.recurring as boolean,
     subscriptionId: row.subscription_id as string | undefined,
     accountId: row.account_id as string | undefined,
+    toAccountId: row.to_account_id as string | undefined,
+    paymentMethod: row.payment_method as PaymentMethod | undefined,
     image: row.image as string | undefined,
   };
 }
@@ -115,7 +117,7 @@ function rowToTransaction(row: Record<string, unknown>): Transaction {
 function rowToSubscription(row: Record<string, unknown>): Subscription {
   return {
     id: row.id as string,
-    type: row.type as 'income' | 'expense',
+    type: row.type as TransactionType,
     name: row.name as string,
     amount: Number(row.amount),
     billingCycle: row.billing_cycle as 'weekly' | 'monthly' | 'yearly',
@@ -124,6 +126,8 @@ function rowToSubscription(row: Record<string, unknown>): Subscription {
     color: row.color as string,
     active: row.active as boolean,
     accountId: row.account_id as string | undefined,
+    toAccountId: row.to_account_id as string | undefined,
+    paymentMethod: row.payment_method as PaymentMethod | undefined,
     image: row.image as string | undefined,
   };
 }
@@ -279,6 +283,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           recurring: t.recurring,
           subscription_id: t.subscriptionId,
           account_id: t.accountId,
+          to_account_id: t.toAccountId,
+          payment_method: t.paymentMethod,
           image: t.image,
         });
       }
@@ -297,6 +303,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           color: s.color,
           active: s.active,
           account_id: s.accountId,
+          to_account_id: s.toAccountId,
+          payment_method: s.paymentMethod,
           image: s.image,
         });
       }
@@ -348,6 +356,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             recurring: action.payload.recurring,
             subscription_id: action.payload.subscriptionId,
             account_id: action.payload.accountId,
+            to_account_id: action.payload.toAccountId,
+            payment_method: action.payload.paymentMethod,
             image: action.payload.image,
           });
           break;
@@ -361,6 +371,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             recurring: action.payload.recurring,
             subscription_id: action.payload.subscriptionId,
             account_id: action.payload.accountId,
+            to_account_id: action.payload.toAccountId,
+            payment_method: action.payload.paymentMethod,
             image: action.payload.image,
           }).eq('id', action.payload.id);
           break;
@@ -381,6 +393,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             color: action.payload.color,
             active: action.payload.active,
             account_id: action.payload.accountId,
+            to_account_id: action.payload.toAccountId,
+            payment_method: action.payload.paymentMethod,
             image: action.payload.image,
           });
           break;
@@ -395,6 +409,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             color: action.payload.color,
             active: action.payload.active,
             account_id: action.payload.accountId,
+            to_account_id: action.payload.toAccountId,
+            payment_method: action.payload.paymentMethod,
             image: action.payload.image,
           }).eq('id', action.payload.id);
           break;

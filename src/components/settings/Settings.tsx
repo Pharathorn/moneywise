@@ -28,7 +28,7 @@ export function Settings() {
       name: newCategory.name,
       icon: newCategory.icon,
       color: newCategory.color,
-      type: newCategory.type,
+      type: newCategory.type as 'income' | 'expense',
     };
 
     if (editingCategory) {
