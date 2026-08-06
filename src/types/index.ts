@@ -1,5 +1,6 @@
 export type TransactionType = 'income' | 'expense' | 'transfer';
 export type PaymentMethod = 'card' | 'cash' | 'bizum' | 'transfer' | 'other';
+export type SubscriptionSection = 'general' | 'housing';
 
 export const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: 'card', label: 'Tarjeta' },
@@ -8,6 +9,14 @@ export const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: 'transfer', label: 'Transferencia' },
   { value: 'other', label: 'Otro' },
 ];
+
+export interface HousingConfig {
+  totalCapital: number;
+  monthlyPayment: number;
+  startDate: string;
+  termMonths: number;
+  interestRate?: number;
+}
 
 export interface Account {
   id: string;
@@ -49,6 +58,7 @@ export interface Subscription {
   toAccountId?: string;
   paymentMethod?: PaymentMethod;
   image?: string;
+  section?: SubscriptionSection;
 }
 
 export interface Category {
@@ -81,6 +91,7 @@ export type AppAction =
   | { type: 'ADD_ACCOUNT'; payload: Account }
   | { type: 'UPDATE_ACCOUNT'; payload: Account }
   | { type: 'DELETE_ACCOUNT'; payload: string }
+  | { type: 'SET_HOUSING_CONFIG'; payload: HousingConfig }
   | { type: 'LOAD_DATA'; payload: AppState };
 
 export interface AppState {
@@ -88,4 +99,5 @@ export interface AppState {
   subscriptions: Subscription[];
   categories: Category[];
   accounts: Account[];
+  housingConfig?: HousingConfig;
 }

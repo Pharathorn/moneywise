@@ -62,11 +62,13 @@ export function Subscriptions() {
 
   const sortedSubscriptions = useMemo(
     () =>
-      [...state.subscriptions].sort((a, b) => {
-        if (a.type !== b.type) return a.type === 'income' ? -1 : a.type === 'expense' ? 1 : 2;
-        if (a.active !== b.active) return a.active ? -1 : 1;
-        return new Date(a.nextPayment).getTime() - new Date(b.nextPayment).getTime();
-      }),
+      [...state.subscriptions]
+        .filter((s) => s.section !== 'housing')
+        .sort((a, b) => {
+          if (a.type !== b.type) return a.type === 'income' ? -1 : a.type === 'expense' ? 1 : 2;
+          if (a.active !== b.active) return a.active ? -1 : 1;
+          return new Date(a.nextPayment).getTime() - new Date(b.nextPayment).getTime();
+        }),
     [state.subscriptions]
   );
 

@@ -8,6 +8,7 @@ import { Transactions } from './components/transactions/Transactions';
 import { Subscriptions } from './components/subscriptions/Subscriptions';
 import { Accounts } from './components/accounts/Accounts';
 import { Settings } from './components/settings/Settings';
+import { Housing } from './components/housing/Housing';
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
                 <Route path="/accounts" element={<Accounts />} />
                 <Route path="/transactions" element={<Transactions />} />
                 <Route path="/subscriptions" element={<Subscriptions />} />
+                <Route path="/housing" element={<Housing />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
             </Routes>

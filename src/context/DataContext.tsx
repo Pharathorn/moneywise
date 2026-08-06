@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
-import { AppState, AppAction, Account, Transaction, Subscription, Category, TransactionType, PaymentMethod } from '../types';
+import { AppState, AppAction, Account, Transaction, Subscription, Category, TransactionType, PaymentMethod, HousingConfig, SubscriptionSection } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { defaultCategories } from '../utils/categories';
 import { supabase } from '../lib/supabase';
@@ -19,6 +19,7 @@ function migrateData(data: unknown): AppState {
     subscriptions: Array.isArray(d.subscriptions) ? d.subscriptions : [],
     categories: Array.isArray(d.categories) ? d.categories : defaultCategories,
     accounts: Array.isArray(d.accounts) ? d.accounts : [],
+    housingConfig: d.housingConfig as HousingConfig | undefined,
   };
 }
 
@@ -82,6 +83,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       };
     case 'LOAD_DATA':
       return action.payload;
+    case 'SET_HOUSING_CONFIG':
+      return { ...state, housingConfig: action.payload };
     default:
       return state;
   }
@@ -129,6 +132,7 @@ function rowToSubscription(row: Record<string, unknown>): Subscription {
     toAccountId: row.to_account_id as string | undefined,
     paymentMethod: row.payment_method as PaymentMethod | undefined,
     image: row.image as string | undefined,
+    section: (row.section as SubscriptionSection) || 'general',
   };
 }
 
@@ -153,6 +157,16 @@ function rowToCategory(row: Record<string, unknown>): Category {
     color: row.color as string,
     type: row.type as 'income' | 'expense',
     image: row.image as string | undefined,
+  };
+}
+
+function rowToHousingConfig(row: Record<string, unknown>): HousingConfig {
+  return {
+    totalCapital: Number(row.total_capital),
+    monthlyPayment: Number(row.monthly_payment),
+    startDate: row.start_date as string,
+    termMonths: Number(row.term_months),
+    interestRate: row.interest_rate != null ? Number(row.interest_rate) : undefined,
   };
 }
 
@@ -192,17 +206,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const loadData = async () => {
       setSyncing(true);
       try {
-        const [accountsRes, categoriesRes, transactionsRes, subscriptionsRes] = await Promise.all([
+        const [accountsRes, categoriesRes, transactionsRes, subscriptionsRes, housingRes] = await Promise.all([
           supabase.from('accounts').select('*').eq('user_id', user.id),
           supabase.from('categories').select('*').eq('user_id', user.id),
           supabase.from('transactions').select('*').eq('user_id', user.id),
           supabase.from('subscriptions').select('*').eq('user_id', user.id),
+          supabase.from('housing_config').select('*').eq('user_id', user.id).maybeSingle(),
         ]);
 
         const remoteAccounts = (accountsRes.data || []).map(rowToAccount);
         const remoteCategories = (categoriesRes.data || []).map(rowToCategory);
         const remoteTransactions = (transactionsRes.data || []).map(rowToTransaction);
         const remoteSubscriptions = (subscriptionsRes.data || []).map(rowToSubscription);
+        const remoteHousing = housingRes.data ? rowToHousingConfig(housingRes.data) : undefined;
 
         // If remote has data, use it; otherwise migrate local data
         if (remoteAccounts.length > 0 || remoteTransactions.length > 0 || remoteSubscriptions.length > 0) {
@@ -213,6 +229,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
               categories: remoteCategories.length > 0 ? remoteCategories : defaultCategories,
               transactions: remoteTransactions,
               subscriptions: remoteSubscriptions,
+              housingConfig: remoteHousing,
             },
           });
         } else if (!hasMigratedRef.current) {
@@ -306,6 +323,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           to_account_id: s.toAccountId,
           payment_method: s.paymentMethod,
           image: s.image,
+          section: s.section || 'general',
         });
       }
     } catch (err) {
@@ -396,6 +414,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             to_account_id: action.payload.toAccountId,
             payment_method: action.payload.paymentMethod,
             image: action.payload.image,
+            section: action.payload.section || 'general',
           });
           break;
         case 'UPDATE_SUBSCRIPTION':
@@ -412,6 +431,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             to_account_id: action.payload.toAccountId,
             payment_method: action.payload.paymentMethod,
             image: action.payload.image,
+            section: action.payload.section || 'general',
           }).eq('id', action.payload.id);
           break;
         case 'DELETE_SUBSCRIPTION':
@@ -440,6 +460,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
           break;
         case 'DELETE_CATEGORY':
           await supabase.from('categories').delete().eq('id', action.payload);
+          break;
+
+        case 'SET_HOUSING_CONFIG':
+          await supabase.from('housing_config').upsert({
+            id: userId,
+            user_id: userId,
+            total_capital: action.payload.totalCapital,
+            monthly_payment: action.payload.monthlyPayment,
+            start_date: action.payload.startDate,
+            term_months: action.payload.termMonths,
+            interest_rate: action.payload.interestRate,
+          });
           break;
       }
     } catch (err) {

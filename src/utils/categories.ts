@@ -12,6 +12,14 @@ export const defaultCategories: Category[] = [
   { id: 'cat-ropa', name: 'Ropa', icon: 'Shirt', color: '#a855f7', type: 'expense' },
   { id: 'cat-mascotas', name: 'Mascotas', icon: 'PawPrint', color: '#f472b6', type: 'expense' },
   { id: 'cat-otros-gasto', name: 'Otros', icon: 'MoreHorizontal', color: '#6b7280', type: 'expense' },
+  // Vivienda
+  { id: 'cat-hipoteca', name: 'Hipoteca', icon: 'Landmark', color: '#6366f1', type: 'expense' },
+  { id: 'cat-seguro-hogar', name: 'Seguro hogar', icon: 'Shield', color: '#0ea5e9', type: 'expense' },
+  { id: 'cat-luz', name: 'Luz', icon: 'Lightbulb', color: '#eab308', type: 'expense' },
+  { id: 'cat-agua', name: 'Agua', icon: 'Droplets', color: '#06b6d4', type: 'expense' },
+  { id: 'cat-internet', name: 'Internet', icon: 'Wifi', color: '#8b5cf6', type: 'expense' },
+  { id: 'cat-ibi', name: 'IBI', icon: 'Receipt', color: '#f97316', type: 'expense' },
+  { id: 'cat-comunidad', name: 'Comunidad', icon: 'Building2', color: '#64748b', type: 'expense' },
   // Ingresos
   { id: 'cat-salario', name: 'Salario', icon: 'Briefcase', color: '#22c55e', type: 'income' },
   { id: 'cat-freelance', name: 'Freelance', icon: 'Laptop', color: '#10b981', type: 'income' },
