@@ -28,7 +28,7 @@ export function Layout() {
               <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </svg>
           </div>
-          <span className={styles['logo-text']}>MoneyWise</span>
+          <span className={styles['logo-text']}>Wash My Cash</span>
         </div>
         <button className={styles['menu-btn']} onClick={() => setSidebarOpen(true)}>
           <Menu size={24} />
@@ -46,7 +46,7 @@ export function Layout() {
               <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </svg>
           </div>
-          <span className={styles['logo-text']}>MoneyWise</span>
+          <span className={styles['logo-text']}>Wash My Cash</span>
         </div>
 
         <nav className={styles.nav}>

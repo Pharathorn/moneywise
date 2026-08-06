@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'MoneyWise - Gestor de Finanzas',
-        short_name: 'MoneyWise',
+        name: 'Wash My Cash - Gestor de Finanzas',
+        short_name: 'Wash My Cash',
         description: 'Controla tus finanzas personales de forma sencilla',
         theme_color: '#3b82f6',
         background_color: '#fafafa',
