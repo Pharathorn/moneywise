@@ -43,7 +43,7 @@ export function Dashboard() {
   }, [monthTransactions, state.categories]);
 
   const monthlyData = useMemo(() => {
-    const months: Record<string, { income: number; expenses: number }> = {};
+    const months: Record<string, { income: number; expenses: number; label: string }> = {};
     const now = new Date();
 
     for (let i = 5; i >= 0; i--) {
@@ -64,8 +64,8 @@ export function Dashboard() {
       }
     });
 
-    return Object.entries(months).map(([key, data]) => ({
-      name: (data as { label: string }).label,
+    return Object.entries(months).map(([, data]) => ({
+      name: data.label,
       income: data.income,
       expenses: data.expenses,
     }));
@@ -132,7 +132,7 @@ export function Dashboard() {
                 <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={60} />
                 <Tooltip
                   contentStyle={{ borderRadius: 8, border: '1px solid #f1f5f9', fontSize: 13 }}
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value) => formatCurrency(Number(value))}
                 />
                 <Bar dataKey="income" fill="#22c55e" radius={[4, 4, 0, 0]} name="Ingresos" />
                 <Bar dataKey="expenses" fill="#ef4444" radius={[4, 4, 0, 0]} name="Gastos" />
@@ -162,7 +162,7 @@ export function Dashboard() {
                   </Pie>
                   <Tooltip
                     contentStyle={{ borderRadius: 8, border: '1px solid #f1f5f9', fontSize: 13 }}
-                    formatter={(value: number) => formatCurrency(value)}
+                    formatter={(value) => formatCurrency(Number(value))}
                   />
                 </PieChart>
               </ResponsiveContainer>
