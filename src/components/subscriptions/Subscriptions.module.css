@@ -13,13 +13,14 @@
 }
 
 .totals-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
 
 .total-box {
+  flex: 1 1 220px;
   background: white;
   border-radius: 12px;
   padding: 1.25rem 1.5rem;
@@ -44,6 +45,13 @@
 .total-expense .total-icon {
   background: #fef2f2;
   color: #ef4444;
+}
+.total-transfer .total-icon {
+  background: #eff6ff;
+  color: #3b82f6;
+}
+.total-transfer {
+  border-left: 3px solid #3b82f6;
 }
 
 .total-label {
@@ -102,6 +110,9 @@
 }
 .sub-expense {
   border-left: 3px solid #ef4444;
+}
+.sub-transfer {
+  border-left: 3px solid #3b82f6;
 }
 
 .sub-header {

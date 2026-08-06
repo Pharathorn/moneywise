@@ -275,8 +275,8 @@ export function Subscriptions() {
           </div>
         </div>
         {monthlyTransferTotal > 0 && (
-          <div className={`${styles['total-box']}`} style={{ borderLeft: '3px solid #3b82f6' }}>
-            <div className={styles['total-icon']} style={{ background: '#eff6ff', color: '#3b82f6' }}>
+          <div className={`${styles['total-box']} ${styles['total-transfer']}`}>
+            <div className={styles['total-icon']}>
               <ArrowRightLeft size={20} />
             </div>
             <div>
