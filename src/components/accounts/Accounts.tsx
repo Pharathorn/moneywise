@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Plus, Pencil, Trash2, Wallet, Image as ImageIcon } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
+import { useApp } from '../../context/DataContext';
 import { Account } from '../../types';
 import { formatCurrency, generateId } from '../../utils/formatters';
 import { Button } from '../ui/Button';

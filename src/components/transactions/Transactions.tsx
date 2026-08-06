@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Plus, Pencil, Trash2, Search, ArrowLeftRight, Image as ImageIcon } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
+import { useApp } from '../../context/DataContext';
 import { Transaction, TransactionType } from '../../types';
 import { formatCurrency, formatDate, generateId } from '../../utils/formatters';
 import { Button } from '../ui/Button';

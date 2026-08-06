@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Wallet, CreditCard, Landmark } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { useApp } from '../../context/AppContext';
+import { useApp } from '../../context/DataContext';
 import { formatCurrency, getCurrentMonthKey, getMonthlyAmount } from '../../utils/formatters';
 import styles from './Dashboard.module.css';
 

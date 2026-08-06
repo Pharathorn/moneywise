@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Plus, Pencil, Trash2, CreditCard, TrendingUp, TrendingDown } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
+import { useApp } from '../../context/DataContext';
 import { Subscription, TransactionType } from '../../types';
 import { formatCurrency, getDaysUntil, getMonthlyAmount, generateId } from '../../utils/formatters';
 import { Button } from '../ui/Button';

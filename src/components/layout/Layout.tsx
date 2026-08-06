@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, ArrowLeftRight, CreditCard, Wallet, Settings, Menu, X } from 'lucide-react';
+import { LayoutDashboard, ArrowLeftRight, CreditCard, Wallet, Settings, Menu, X, LogOut, Cloud, CloudOff, Loader } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { useApp } from '../../context/DataContext';
 import styles from './Layout.module.css';
 
 const navItems = [
@@ -13,6 +15,8 @@ const navItems = [
 
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { signOut, user } = useAuth();
+  const { syncing, isOnline } = useApp();
 
   return (
     <div className={styles.layout}>
@@ -60,6 +64,34 @@ export function Layout() {
             </NavLink>
           ))}
         </nav>
+
+        <div className={styles['sidebar-footer']}>
+          <div className={styles['sync-status']}>
+            {syncing ? (
+              <>
+                <Loader size={14} className={styles.spinning} />
+                <span>Sincronizando...</span>
+              </>
+            ) : isOnline ? (
+              <>
+                <Cloud size={14} style={{ color: '#22c55e' }} />
+                <span>Online</span>
+              </>
+            ) : (
+              <>
+                <CloudOff size={14} style={{ color: '#f97316' }} />
+                <span>Offline</span>
+              </>
+            )}
+          </div>
+
+          <div className={styles['user-info']}>
+            <span className={styles['user-email']}>{user?.email}</span>
+            <button className={styles['logout-btn']} onClick={signOut} title="Cerrar sesión">
+              <LogOut size={18} />
+            </button>
+          </div>
+        </div>
       </aside>
 
       <main className={styles.main}>

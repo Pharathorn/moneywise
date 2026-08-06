@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, Download, Upload } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
+import { useApp } from '../../context/DataContext';
 import { Category, TransactionType } from '../../types';
 import { formatCurrency, generateId } from '../../utils/formatters';
 import { Button } from '../ui/Button';
