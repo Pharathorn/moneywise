@@ -137,6 +137,7 @@ function rowToAccount(row: Record<string, unknown>): Account {
     icon: row.icon as string,
     active: row.active as boolean,
     image: row.image as string | undefined,
+    initialBalance: Number(row.initial_balance) || 0,
   };
 }
 
@@ -245,6 +246,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           icon: account.icon,
           image: account.image,
           active: account.active,
+          initial_balance: account.initialBalance || 0,
         });
       }
 
@@ -316,6 +318,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             icon: action.payload.icon,
             image: action.payload.image,
             active: action.payload.active,
+            initial_balance: action.payload.initialBalance,
           });
           break;
         case 'UPDATE_ACCOUNT':
@@ -326,6 +329,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             icon: action.payload.icon,
             image: action.payload.image,
             active: action.payload.active,
+            initial_balance: action.payload.initialBalance,
           }).eq('id', action.payload.id);
           break;
         case 'DELETE_ACCOUNT':

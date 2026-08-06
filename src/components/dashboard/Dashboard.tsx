@@ -44,7 +44,7 @@ export function Dashboard() {
         const expenses = accountTransactions
           .filter((t) => t.type === 'expense')
           .reduce((sum, t) => sum + t.amount, 0);
-        return { ...account, income, expenses, balance: income - expenses };
+        return { ...account, income, expenses, balance: (account.initialBalance || 0) + income - expenses };
       });
   }, [state.accounts, monthTransactions]);
 

@@ -8,6 +8,7 @@ export interface Account {
   icon: string;
   image?: string;
   active: boolean;
+  initialBalance: number;
 }
 
 export interface Transaction {

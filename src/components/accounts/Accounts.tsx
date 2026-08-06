@@ -34,6 +34,7 @@ export function Accounts() {
     color: COLORS[0],
     image: '',
     active: true,
+    initialBalance: '',
   });
 
   const accountsWithStats = useMemo(() => {
@@ -64,7 +65,7 @@ export function Accounts() {
         ...account,
         income,
         expenses,
-        balance: income - expenses,
+        balance: (account.initialBalance || 0) + income - expenses,
         recurringIncome,
         recurringExpenses,
         transactionCount: accountTransactions.length,
@@ -81,6 +82,7 @@ export function Accounts() {
       color: COLORS[0],
       image: '',
       active: true,
+      initialBalance: '',
     });
     setIsModalOpen(true);
   };
@@ -93,6 +95,7 @@ export function Accounts() {
       color: account.color,
       image: account.image || '',
       active: account.active,
+      initialBalance: (account.initialBalance || 0).toString(),
     });
     setIsModalOpen(true);
   };
@@ -108,6 +111,7 @@ export function Accounts() {
       icon: form.bank.substring(0, 1).toUpperCase(),
       image: form.image || undefined,
       active: form.active,
+      initialBalance: parseFloat(form.initialBalance) || 0,
     };
 
     if (editingAccount) {
@@ -220,6 +224,15 @@ export function Accounts() {
           value={form.bank}
           onChange={(e) => setForm({ ...form, bank: e.target.value })}
           placeholder="Ej: Santander"
+        />
+
+        <Input
+          label="Saldo actual"
+          type="number"
+          step="0.01"
+          value={form.initialBalance}
+          onChange={(e) => setForm({ ...form, initialBalance: e.target.value })}
+          placeholder="0.00"
         />
 
         <div className={styles['image-section']}>
