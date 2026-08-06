@@ -10,6 +10,16 @@ const initialState: AppState = {
   accounts: [],
 };
 
+function migrateData(data: unknown): AppState {
+  const d = data as Record<string, unknown>;
+  return {
+    transactions: Array.isArray(d.transactions) ? d.transactions : [],
+    subscriptions: Array.isArray(d.subscriptions) ? d.subscriptions : [],
+    categories: Array.isArray(d.categories) ? d.categories : defaultCategories,
+    accounts: Array.isArray(d.accounts) ? d.accounts : [],
+  };
+}
+
 function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case 'ADD_TRANSACTION':
@@ -84,7 +94,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [storedData, setStoredData] = useLocalStorage<AppState>('moneywise-data', initialState);
-  const [state, dispatch] = useReducer(appReducer, storedData);
+  const [state, dispatch] = useReducer(appReducer, migrateData(storedData));
 
   useEffect(() => {
     setStoredData(state);
