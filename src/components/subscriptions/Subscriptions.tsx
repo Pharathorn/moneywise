@@ -188,7 +188,7 @@ export function Subscriptions() {
                 <img src={s.image} alt="" onError={(e) => (e.currentTarget.style.display = 'none')} />
               </div>
             ) : s.type === 'transfer' ? (
-              <div className={styles['sub-transfer']}>
+              <div className={styles['sub-transfer-icon']}>
                 <ArrowRightLeft size={16} />
               </div>
             ) : (

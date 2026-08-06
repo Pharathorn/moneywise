@@ -152,6 +152,10 @@
 }
 
 .sub-transfer {
+  border-left: 3px solid #3b82f6;
+}
+
+.sub-transfer-icon {
   width: 40px;
   height: 40px;
   border-radius: 10px;
