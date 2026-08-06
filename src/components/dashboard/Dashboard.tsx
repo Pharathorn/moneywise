@@ -30,12 +30,17 @@ export function Dashboard() {
       .filter((s) => s.active && s.type === 'expense' && s.section !== 'housing')
       .reduce((sum, s) => sum + getMonthlyAmount(s.amount, s.billingCycle), 0);
 
-    const housingExpenses = state.subscriptions
+    const mortgagePayment = state.housingConfig?.monthlyPayment || 0;
+
+    const housingSubs = state.subscriptions
       .filter((s) => s.active && s.section === 'housing')
       .reduce((sum, s) => sum + getMonthlyAmount(s.amount, s.billingCycle), 0);
 
-    return { income, expenses, balance: income - expenses, recurringIncome, recurringExpenses, housingExpenses };
-  }, [monthTransactions, state.subscriptions]);
+    const housingExpenses = housingSubs + mortgagePayment;
+    const totalMonthlyExpenses = recurringExpenses + housingExpenses;
+
+    return { income, expenses, balance: income - expenses, recurringIncome, recurringExpenses, housingExpenses, totalMonthlyExpenses };
+  }, [monthTransactions, state.subscriptions, state.housingConfig]);
 
   const accountsSummary = useMemo(() => {
     return state.accounts
@@ -152,6 +157,12 @@ export function Dashboard() {
             <Home size={16} /> Vivienda
           </p>
           <p className={`${styles['summary-value']} ${styles.negative}`}>{formatCurrency(summary.housingExpenses)}</p>
+        </div>
+        <div className={styles['summary-card']} style={{ background: '#fef2f2', border: '1px solid #fecaca' }}>
+          <p className={styles['summary-label']} style={{ color: '#991b1b' }}>
+            <TrendingDown size={16} /> Gasto total / mes
+          </p>
+          <p className={`${styles['summary-value']} ${styles.negative}`}>{formatCurrency(summary.totalMonthlyExpenses)}</p>
         </div>
       </div>
 
