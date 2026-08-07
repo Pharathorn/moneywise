@@ -176,8 +176,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, migrateData(storedData));
   const [syncing, setSyncing] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const syncQueueRef = useRef<Array<{ action: AppAction; timestamp: number }>>([]);
+  const syncQueueRef = useRef<Array<{ action: AppAction; timestamp: number }>>(
+    (() => {
+      try {
+        const saved = localStorage.getItem('moneywise-sync-queue');
+        return saved ? JSON.parse(saved) : [];
+      } catch { return []; }
+    })()
+  );
   const hasMigratedRef = useRef(false);
+  const lastSyncRef = useRef(0);
+
+  // Persist sync queue to localStorage
+  const persistQueue = useCallback(() => {
+    try {
+      localStorage.setItem('moneywise-sync-queue', JSON.stringify(syncQueueRef.current));
+    } catch { /* ignore */ }
+  }, []);
 
   // Track online status
   useEffect(() => {
@@ -203,56 +218,72 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const loadData = async () => {
-      setSyncing(true);
-      try {
-        const [accountsRes, categoriesRes, transactionsRes, subscriptionsRes, housingRes] = await Promise.all([
-          supabase.from('accounts').select('*').eq('user_id', user.id),
-          supabase.from('categories').select('*').eq('user_id', user.id),
-          supabase.from('transactions').select('*').eq('user_id', user.id),
-          supabase.from('subscriptions').select('*').eq('user_id', user.id),
-          supabase.from('housing_config').select('*').eq('user_id', user.id).maybeSingle(),
-        ]);
+    loadDataFromSupabase(user.id);
 
-        const remoteAccounts = (accountsRes.data || []).map(rowToAccount);
-        const remoteCategories = (categoriesRes.data || []).map(rowToCategory);
-        const remoteTransactions = (transactionsRes.data || []).map(rowToTransaction);
-        const remoteSubscriptions = (subscriptionsRes.data || []).map(rowToSubscription);
-        const remoteHousing = housingRes.data ? rowToHousingConfig(housingRes.data) : undefined;
-
-        // If remote has data, use it; otherwise migrate local data
-        if (remoteAccounts.length > 0 || remoteTransactions.length > 0 || remoteSubscriptions.length > 0) {
-          dispatch({
-            type: 'LOAD_DATA',
-            payload: {
-              accounts: remoteAccounts,
-              categories: remoteCategories.length > 0 ? remoteCategories : defaultCategories,
-              transactions: remoteTransactions,
-              subscriptions: remoteSubscriptions,
-              housingConfig: remoteHousing,
-            },
-          });
-        } else if (!hasMigratedRef.current) {
-          // First login: migrate localStorage data to Supabase
-          hasMigratedRef.current = true;
-          await migrateLocalToSupabase(user.id, storedData);
-          dispatch({ type: 'LOAD_DATA', payload: migrateData(storedData) });
+    // Re-fetch when page becomes visible (user switches back to tab/app)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && user) {
+        const now = Date.now();
+        if (now - lastSyncRef.current > 30000) { // Throttle: max once per 30s
+          lastSyncRef.current = now;
+          loadDataFromSupabase(user.id);
         }
-      } catch (err) {
-        console.error('Error loading data from Supabase:', err);
       }
-      setSyncing(false);
     };
 
-    loadData();
+    // Process queue when coming back online
+    const handleOnline = () => {
+      if (user && syncQueueRef.current.length > 0) {
+        processSyncQueue(user.id);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('online', handleOnline);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('online', handleOnline);
+    };
   }, [user]);
 
-  // Process sync queue when coming back online
-  useEffect(() => {
-    if (isOnline && user && syncQueueRef.current.length > 0) {
-      processSyncQueue(user.id);
+  const loadDataFromSupabase = async (userId: string) => {
+    setSyncing(true);
+    try {
+      const [accountsRes, categoriesRes, transactionsRes, subscriptionsRes, housingRes] = await Promise.all([
+        supabase.from('accounts').select('*').eq('user_id', userId),
+        supabase.from('categories').select('*').eq('user_id', userId),
+        supabase.from('transactions').select('*').eq('user_id', userId),
+        supabase.from('subscriptions').select('*').eq('user_id', userId),
+        supabase.from('housing_config').select('*').eq('user_id', userId).maybeSingle(),
+      ]);
+
+      const remoteAccounts = (accountsRes.data || []).map(rowToAccount);
+      const remoteCategories = (categoriesRes.data || []).map(rowToCategory);
+      const remoteTransactions = (transactionsRes.data || []).map(rowToTransaction);
+      const remoteSubscriptions = (subscriptionsRes.data || []).map(rowToSubscription);
+      const remoteHousing = housingRes.data ? rowToHousingConfig(housingRes.data) : undefined;
+
+      if (remoteAccounts.length > 0 || remoteTransactions.length > 0 || remoteSubscriptions.length > 0) {
+        dispatch({
+          type: 'LOAD_DATA',
+          payload: {
+            accounts: remoteAccounts,
+            categories: remoteCategories.length > 0 ? remoteCategories : defaultCategories,
+            transactions: remoteTransactions,
+            subscriptions: remoteSubscriptions,
+            housingConfig: remoteHousing,
+          },
+        });
+      } else if (!hasMigratedRef.current) {
+        hasMigratedRef.current = true;
+        await migrateLocalToSupabase(userId, storedData);
+        dispatch({ type: 'LOAD_DATA', payload: migrateData(storedData) });
+      }
+    } catch (err) {
+      console.error('Error loading data from Supabase:', err);
     }
-  }, [isOnline, user]);
+    setSyncing(false);
+  };
 
   const migrateLocalToSupabase = async (userId: string, data: AppState) => {
     try {
@@ -482,9 +513,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const processSyncQueue = async (userId: string) => {
     const queue = [...syncQueueRef.current];
     syncQueueRef.current = [];
+    persistQueue();
     for (const item of queue) {
-      await syncToSupabase(item.action, userId);
+      try {
+        await syncToSupabase(item.action, userId);
+      } catch {
+        // Re-queue failed items
+        syncQueueRef.current.push(item);
+      }
     }
+    persistQueue();
   };
 
   const enhancedDispatch = useCallback((action: AppAction) => {
@@ -494,13 +532,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Sync to Supabase
     if (user) {
       if (isOnline) {
-        syncToSupabase(action, user.id);
+        syncToSupabase(action, user.id).catch(() => {
+          syncQueueRef.current.push({ action, timestamp: Date.now() });
+          persistQueue();
+        });
       } else {
-        // Queue for later
         syncQueueRef.current.push({ action, timestamp: Date.now() });
+        persistQueue();
       }
     }
-  }, [user, isOnline, syncToSupabase]);
+  }, [user, isOnline, syncToSupabase, persistQueue]);
 
   return (
     <DataContext.Provider value={{ state, dispatch: enhancedDispatch, syncing, isOnline }}>

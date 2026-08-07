@@ -355,6 +355,40 @@
 
 @media (max-width: 640px) {
   .totals-row {
+    flex-direction: column;
+  }
+
+  .totals-row .total-box {
+    flex: 1 1 100%;
+  }
+
+  .header {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .grid {
     grid-template-columns: 1fr;
+  }
+
+  .sub-actions {
+    opacity: 1;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .type-toggle {
+    flex-direction: column;
+  }
+
+  .type-btn {
+    padding: 0.5rem;
+  }
+
+  .sub-details {
+    flex-wrap: wrap;
+    gap: 0.75rem;
   }
 }

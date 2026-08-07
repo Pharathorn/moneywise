@@ -306,7 +306,16 @@
   .summary-grid {
     grid-template-columns: 1fr;
   }
+  .summary-value {
+    font-size: 1.25rem;
+  }
   .accounts-grid {
+    grid-template-columns: 1fr;
+  }
+  .chart-container {
+    height: 200px;
+  }
+  .recent-section {
     grid-template-columns: 1fr;
   }
 }
