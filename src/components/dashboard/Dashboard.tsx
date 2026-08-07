@@ -33,7 +33,7 @@ export function Dashboard() {
     const mortgagePayment = state.housingConfig?.monthlyPayment || 0;
 
     const housingSubs = state.subscriptions
-      .filter((s) => s.active && s.section === 'housing')
+      .filter((s) => s.active && s.section === 'housing' && !(mortgagePayment > 0 && s.category === 'cat-hipoteca' && s.amount === mortgagePayment))
       .reduce((sum, s) => sum + getSubscriptionMonthAmount(s), 0);
 
     const housingExpenses = housingSubs + mortgagePayment;

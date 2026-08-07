@@ -110,8 +110,8 @@ export function Housing() {
   );
 
   const monthlyTotal = useMemo(
-    () => housingSubs.filter((s) => s.active).reduce((sum, s) => sum + getSubscriptionMonthAmount(s), 0),
-    [housingSubs]
+    () => housingSubs.filter((s) => s.active && !(config && s.category === 'cat-hipoteca' && s.amount === config.monthlyPayment)).reduce((sum, s) => sum + getSubscriptionMonthAmount(s), 0),
+    [housingSubs, config]
   );
 
   const activeAccounts = useMemo(() => state.accounts.filter((a) => a.active), [state.accounts]);
