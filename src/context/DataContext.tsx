@@ -260,6 +260,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
         supabase.from('housing_config').select('*').eq('user_id', userId).maybeSingle(),
       ]);
 
+      // Detect auth errors (400/401 = session expired)
+      const allResults = [accountsRes, categoriesRes, transactionsRes, subscriptionsRes, housingRes];
+      const authError = allResults.find(r => r.error?.code === 'PGRST301' || r.status === 400 || r.status === 401);
+      if (authError) {
+        console.error('[Sync] Auth error - session expired:', authError.error);
+        setSyncError('Sesión expirada. Inicia sesión de nuevo.');
+        setSyncing(false);
+        return;
+      }
+
       if (accountsRes.error) console.error('Error loading accounts:', accountsRes.error);
       if (categoriesRes.error) console.error('Error loading categories:', categoriesRes.error);
       if (transactionsRes.error) console.error('Error loading transactions:', transactionsRes.error);
@@ -552,7 +562,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Sync to Supabase
     if (user) {
       if (isOnline) {
-        syncToSupabase(action, user.id).catch(() => {
+        syncToSupabase(action, user.id).catch((err) => {
+          // Detect auth errors
+          if (err?.status === 400 || err?.status === 401 || err?.code === 'PGRST301') {
+            setSyncError('Sesión expirada. Inicia sesión de nuevo.');
+            return;
+          }
           syncQueueRef.current.push({ action, timestamp: Date.now() });
           persistQueue();
         });

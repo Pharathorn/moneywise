@@ -16,7 +16,7 @@ const navItems = [
 
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { signOut, user } = useAuth();
+  const { signOut, user, sessionExpired } = useAuth();
   const { syncing, isOnline, manualSync, syncError } = useApp();
 
   return (
@@ -67,6 +67,39 @@ export function Layout() {
         </nav>
 
         <div className={styles['sidebar-footer']}>
+          {(syncError?.includes('Sesión expirada') || sessionExpired) && (
+            <div style={{
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: '8px',
+              padding: '0.75rem',
+              marginBottom: '0.75rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#dc2626', fontSize: '0.8rem', fontWeight: 600 }}>
+                <CloudOff size={14} />
+                Sesión expirada
+              </div>
+              <button
+                onClick={signOut}
+                style={{
+                  background: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '0.4rem 0.75rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  width: '100%',
+                }}
+              >
+                Iniciar sesión de nuevo
+              </button>
+            </div>
+          )}
           <div className={styles['sync-status']} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {syncing ? (
               <>
