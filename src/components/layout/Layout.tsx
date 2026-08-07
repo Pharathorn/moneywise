@@ -17,7 +17,7 @@ const navItems = [
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { signOut, user } = useAuth();
-  const { syncing, isOnline, manualSync } = useApp();
+  const { syncing, isOnline, manualSync, syncError } = useApp();
 
   return (
     <div className={styles.layout}>
@@ -72,6 +72,11 @@ export function Layout() {
               <>
                 <Loader size={14} className={styles.spinning} />
                 <span>Sincronizando...</span>
+              </>
+            ) : syncError ? (
+              <>
+                <CloudOff size={14} style={{ color: '#ef4444' }} />
+                <span style={{ color: '#ef4444' }}>Error sync</span>
               </>
             ) : isOnline ? (
               <>

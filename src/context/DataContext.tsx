@@ -96,6 +96,7 @@ interface DataContextType {
   syncing: boolean;
   isOnline: boolean;
   manualSync: () => Promise<void>;
+  syncError: string | null;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -177,6 +178,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, migrateData(storedData));
   const [syncing, setSyncing] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const syncQueueRef = useRef<Array<{ action: AppAction; timestamp: number }>>(
     (() => {
       try {
@@ -257,6 +259,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         supabase.from('subscriptions').select('*').eq('user_id', userId),
         supabase.from('housing_config').select('*').eq('user_id', userId).maybeSingle(),
       ]);
+
+      if (accountsRes.error) console.error('Error loading accounts:', accountsRes.error);
+      if (categoriesRes.error) console.error('Error loading categories:', categoriesRes.error);
+      if (transactionsRes.error) console.error('Error loading transactions:', transactionsRes.error);
+      if (subscriptionsRes.error) console.error('Error loading subscriptions:', subscriptionsRes.error);
+      if (housingRes.error) console.error('Error loading housing:', housingRes.error);
 
       const remoteAccounts = (accountsRes.data || []).map(rowToAccount);
       const remoteCategories = (categoriesRes.data || []).map(rowToCategory);
@@ -364,150 +372,161 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const syncToSupabase = useCallback(async (action: AppAction, userId: string) => {
-    try {
-      switch (action.type) {
-        case 'ADD_ACCOUNT':
-          await supabase.from('accounts').upsert({
-            id: action.payload.id,
-            user_id: userId,
-            name: action.payload.name,
-            bank: action.payload.bank,
-            color: action.payload.color,
-            icon: action.payload.icon,
-            image: action.payload.image,
-            active: action.payload.active,
-            initial_balance: action.payload.initialBalance,
-          });
-          break;
-        case 'UPDATE_ACCOUNT':
-          await supabase.from('accounts').update({
-            name: action.payload.name,
-            bank: action.payload.bank,
-            color: action.payload.color,
-            icon: action.payload.icon,
-            image: action.payload.image,
-            active: action.payload.active,
-            initial_balance: action.payload.initialBalance,
-          }).eq('id', action.payload.id);
-          break;
-        case 'DELETE_ACCOUNT':
-          await supabase.from('accounts').delete().eq('id', action.payload);
-          break;
+    let result: { error: unknown };
 
-        case 'ADD_TRANSACTION':
-          await supabase.from('transactions').upsert({
-            id: action.payload.id,
-            user_id: userId,
-            type: action.payload.type,
-            amount: action.payload.amount,
-            description: action.payload.description,
-            category: action.payload.category,
-            date: action.payload.date,
-            recurring: action.payload.recurring,
-            subscription_id: action.payload.subscriptionId,
-            account_id: action.payload.accountId,
-            to_account_id: action.payload.toAccountId,
-            payment_method: action.payload.paymentMethod,
-            image: action.payload.image,
-          });
-          break;
-        case 'UPDATE_TRANSACTION':
-          await supabase.from('transactions').update({
-            type: action.payload.type,
-            amount: action.payload.amount,
-            description: action.payload.description,
-            category: action.payload.category,
-            date: action.payload.date,
-            recurring: action.payload.recurring,
-            subscription_id: action.payload.subscriptionId,
-            account_id: action.payload.accountId,
-            to_account_id: action.payload.toAccountId,
-            payment_method: action.payload.paymentMethod,
-            image: action.payload.image,
-          }).eq('id', action.payload.id);
-          break;
-        case 'DELETE_TRANSACTION':
-          await supabase.from('transactions').delete().eq('id', action.payload);
-          break;
+    switch (action.type) {
+      case 'ADD_ACCOUNT':
+        result = await supabase.from('accounts').upsert({
+          id: action.payload.id,
+          user_id: userId,
+          name: action.payload.name,
+          bank: action.payload.bank,
+          color: action.payload.color,
+          icon: action.payload.icon,
+          image: action.payload.image,
+          active: action.payload.active,
+          initial_balance: action.payload.initialBalance,
+        });
+        if (result.error) throw result.error;
+        break;
+      case 'UPDATE_ACCOUNT':
+        result = await supabase.from('accounts').update({
+          name: action.payload.name,
+          bank: action.payload.bank,
+          color: action.payload.color,
+          icon: action.payload.icon,
+          image: action.payload.image,
+          active: action.payload.active,
+          initial_balance: action.payload.initialBalance,
+        }).eq('id', action.payload.id);
+        if (result.error) throw result.error;
+        break;
+      case 'DELETE_ACCOUNT':
+        result = await supabase.from('accounts').delete().eq('id', action.payload);
+        if (result.error) throw result.error;
+        break;
 
-        case 'ADD_SUBSCRIPTION':
-          await supabase.from('subscriptions').upsert({
-            id: action.payload.id,
-            user_id: userId,
-            type: action.payload.type,
-            name: action.payload.name,
-            amount: action.payload.amount,
-            billing_cycle: action.payload.billingCycle,
-            next_payment: action.payload.nextPayment,
-            category: action.payload.category,
-            color: action.payload.color,
-            active: action.payload.active,
-            account_id: action.payload.accountId,
-            to_account_id: action.payload.toAccountId,
-            payment_method: action.payload.paymentMethod,
-            image: action.payload.image,
-            section: action.payload.section || 'general',
-          });
-          break;
-        case 'UPDATE_SUBSCRIPTION':
-          await supabase.from('subscriptions').update({
-            type: action.payload.type,
-            name: action.payload.name,
-            amount: action.payload.amount,
-            billing_cycle: action.payload.billingCycle,
-            next_payment: action.payload.nextPayment,
-            category: action.payload.category,
-            color: action.payload.color,
-            active: action.payload.active,
-            account_id: action.payload.accountId,
-            to_account_id: action.payload.toAccountId,
-            payment_method: action.payload.paymentMethod,
-            image: action.payload.image,
-            section: action.payload.section || 'general',
-          }).eq('id', action.payload.id);
-          break;
-        case 'DELETE_SUBSCRIPTION':
-          await supabase.from('subscriptions').delete().eq('id', action.payload);
-          break;
+      case 'ADD_TRANSACTION':
+        result = await supabase.from('transactions').upsert({
+          id: action.payload.id,
+          user_id: userId,
+          type: action.payload.type,
+          amount: action.payload.amount,
+          description: action.payload.description,
+          category: action.payload.category,
+          date: action.payload.date,
+          recurring: action.payload.recurring,
+          subscription_id: action.payload.subscriptionId,
+          account_id: action.payload.accountId,
+          to_account_id: action.payload.toAccountId,
+          payment_method: action.payload.paymentMethod,
+          image: action.payload.image,
+        });
+        if (result.error) throw result.error;
+        break;
+      case 'UPDATE_TRANSACTION':
+        result = await supabase.from('transactions').update({
+          type: action.payload.type,
+          amount: action.payload.amount,
+          description: action.payload.description,
+          category: action.payload.category,
+          date: action.payload.date,
+          recurring: action.payload.recurring,
+          subscription_id: action.payload.subscriptionId,
+          account_id: action.payload.accountId,
+          to_account_id: action.payload.toAccountId,
+          payment_method: action.payload.paymentMethod,
+          image: action.payload.image,
+        }).eq('id', action.payload.id);
+        if (result.error) throw result.error;
+        break;
+      case 'DELETE_TRANSACTION':
+        result = await supabase.from('transactions').delete().eq('id', action.payload);
+        if (result.error) throw result.error;
+        break;
 
-        case 'ADD_CATEGORY':
-          await supabase.from('categories').upsert({
-            id: action.payload.id,
-            user_id: userId,
-            name: action.payload.name,
-            icon: action.payload.icon,
-            color: action.payload.color,
-            type: action.payload.type,
-            image: action.payload.image,
-          });
-          break;
-        case 'UPDATE_CATEGORY':
-          await supabase.from('categories').update({
-            name: action.payload.name,
-            icon: action.payload.icon,
-            color: action.payload.color,
-            type: action.payload.type,
-            image: action.payload.image,
-          }).eq('id', action.payload.id);
-          break;
-        case 'DELETE_CATEGORY':
-          await supabase.from('categories').delete().eq('id', action.payload);
-          break;
+      case 'ADD_SUBSCRIPTION':
+        result = await supabase.from('subscriptions').upsert({
+          id: action.payload.id,
+          user_id: userId,
+          type: action.payload.type,
+          name: action.payload.name,
+          amount: action.payload.amount,
+          billing_cycle: action.payload.billingCycle,
+          next_payment: action.payload.nextPayment,
+          category: action.payload.category,
+          color: action.payload.color,
+          active: action.payload.active,
+          account_id: action.payload.accountId,
+          to_account_id: action.payload.toAccountId,
+          payment_method: action.payload.paymentMethod,
+          image: action.payload.image,
+          section: action.payload.section || 'general',
+        });
+        if (result.error) throw result.error;
+        break;
+      case 'UPDATE_SUBSCRIPTION':
+        result = await supabase.from('subscriptions').update({
+          type: action.payload.type,
+          name: action.payload.name,
+          amount: action.payload.amount,
+          billing_cycle: action.payload.billingCycle,
+          next_payment: action.payload.nextPayment,
+          category: action.payload.category,
+          color: action.payload.color,
+          active: action.payload.active,
+          account_id: action.payload.accountId,
+          to_account_id: action.payload.toAccountId,
+          payment_method: action.payload.paymentMethod,
+          image: action.payload.image,
+          section: action.payload.section || 'general',
+        }).eq('id', action.payload.id);
+        if (result.error) throw result.error;
+        break;
+      case 'DELETE_SUBSCRIPTION':
+        result = await supabase.from('subscriptions').delete().eq('id', action.payload);
+        if (result.error) throw result.error;
+        break;
 
-        case 'SET_HOUSING_CONFIG':
-          await supabase.from('housing_config').upsert({
-            id: userId,
-            user_id: userId,
-            total_capital: action.payload.totalCapital,
-            monthly_payment: action.payload.monthlyPayment,
-            start_date: action.payload.startDate,
-            term_months: action.payload.termMonths,
-            interest_rate: action.payload.interestRate,
-          });
-          break;
-      }
-    } catch (err) {
-      console.error('Sync error:', err);
+      case 'ADD_CATEGORY':
+        result = await supabase.from('categories').upsert({
+          id: action.payload.id,
+          user_id: userId,
+          name: action.payload.name,
+          icon: action.payload.icon,
+          color: action.payload.color,
+          type: action.payload.type,
+          image: action.payload.image,
+        });
+        if (result.error) throw result.error;
+        break;
+      case 'UPDATE_CATEGORY':
+        result = await supabase.from('categories').update({
+          name: action.payload.name,
+          icon: action.payload.icon,
+          color: action.payload.color,
+          type: action.payload.type,
+          image: action.payload.image,
+        }).eq('id', action.payload.id);
+        if (result.error) throw result.error;
+        break;
+      case 'DELETE_CATEGORY':
+        result = await supabase.from('categories').delete().eq('id', action.payload);
+        if (result.error) throw result.error;
+        break;
+
+      case 'SET_HOUSING_CONFIG':
+        result = await supabase.from('housing_config').upsert({
+          id: userId,
+          user_id: userId,
+          total_capital: action.payload.totalCapital,
+          monthly_payment: action.payload.monthlyPayment,
+          start_date: action.payload.startDate,
+          term_months: action.payload.termMonths,
+          interest_rate: action.payload.interestRate,
+        });
+        if (result.error) throw result.error;
+        break;
     }
   }, []);
 
@@ -547,16 +566,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const manualSync = useCallback(async () => {
     if (user) {
       setSyncing(true);
-      await loadDataFromSupabase(user.id);
-      if (syncQueueRef.current.length > 0) {
-        await processSyncQueue(user.id);
+      setSyncError(null);
+      try {
+        await loadDataFromSupabase(user.id);
+        if (syncQueueRef.current.length > 0) {
+          await processSyncQueue(user.id);
+        }
+        setSyncError(null);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Error de sincronización';
+        setSyncError(msg);
+        console.error('Manual sync error:', err);
       }
       setSyncing(false);
     }
   }, [user, loadDataFromSupabase]);
 
   return (
-    <DataContext.Provider value={{ state, dispatch: enhancedDispatch, syncing, isOnline, manualSync }}>
+    <DataContext.Provider value={{ state, dispatch: enhancedDispatch, syncing, isOnline, manualSync, syncError }}>
       {children}
     </DataContext.Provider>
   );
