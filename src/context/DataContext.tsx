@@ -260,21 +260,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
         supabase.from('housing_config').select('*').eq('user_id', userId).maybeSingle(),
       ]);
 
-      // Detect auth errors (400/401 = session expired)
-      const allResults = [accountsRes, categoriesRes, transactionsRes, subscriptionsRes, housingRes];
-      const authError = allResults.find(r => r.error?.code === 'PGRST301' || r.status === 400 || r.status === 401);
-      if (authError) {
-        console.error('[Sync] Auth error - session expired:', authError.error);
-        setSyncError('Sesión expirada. Inicia sesión de nuevo.');
-        setSyncing(false);
-        return;
-      }
-
       if (accountsRes.error) console.error('Error loading accounts:', accountsRes.error);
       if (categoriesRes.error) console.error('Error loading categories:', categoriesRes.error);
       if (transactionsRes.error) console.error('Error loading transactions:', transactionsRes.error);
       if (subscriptionsRes.error) console.error('Error loading subscriptions:', subscriptionsRes.error);
       if (housingRes.error) console.error('Error loading housing:', housingRes.error);
+
+      console.log('[Sync] Loaded:', {
+        accounts: (accountsRes.data || []).length,
+        categories: (categoriesRes.data || []).length,
+        transactions: (transactionsRes.data || []).length,
+        subscriptions: (subscriptionsRes.data || []).length,
+        housing: housingRes.data ? 1 : 0,
+      });
 
       const remoteAccounts = (accountsRes.data || []).map(rowToAccount);
       const remoteCategories = (categoriesRes.data || []).map(rowToCategory);
