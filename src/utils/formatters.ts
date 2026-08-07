@@ -52,3 +52,17 @@ export function getMonthlyAmount(amount: number, cycle: string): number {
       return amount;
   }
 }
+
+export function isSubscriptionDueThisMonth(subscription: { billingCycle: string; nextPayment: string }): boolean {
+  if (subscription.billingCycle !== 'yearly') return true;
+  const now = new Date();
+  const nextDue = new Date(subscription.nextPayment);
+  return nextDue.getFullYear() === now.getFullYear() && nextDue.getMonth() === now.getMonth();
+}
+
+export function getSubscriptionMonthAmount(subscription: { amount: number; billingCycle: string; nextPayment: string }): number {
+  if (subscription.billingCycle === 'yearly') {
+    return isSubscriptionDueThisMonth(subscription) ? subscription.amount : 0;
+  }
+  return getMonthlyAmount(subscription.amount, subscription.billingCycle);
+}

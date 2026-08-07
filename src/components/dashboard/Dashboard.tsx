@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Wallet, CreditCard, Landmark, Home } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useApp } from '../../context/DataContext';
-import { formatCurrency, getCurrentMonthKey, getMonthlyAmount } from '../../utils/formatters';
+import { formatCurrency, getCurrentMonthKey, getSubscriptionMonthAmount } from '../../utils/formatters';
 import styles from './Dashboard.module.css';
 
 export function Dashboard() {
@@ -24,17 +24,17 @@ export function Dashboard() {
 
     const recurringIncome = state.subscriptions
       .filter((s) => s.active && s.type === 'income')
-      .reduce((sum, s) => sum + getMonthlyAmount(s.amount, s.billingCycle), 0);
+      .reduce((sum, s) => sum + getSubscriptionMonthAmount(s), 0);
 
     const recurringExpenses = state.subscriptions
       .filter((s) => s.active && s.type === 'expense' && s.section !== 'housing')
-      .reduce((sum, s) => sum + getMonthlyAmount(s.amount, s.billingCycle), 0);
+      .reduce((sum, s) => sum + getSubscriptionMonthAmount(s), 0);
 
     const mortgagePayment = state.housingConfig?.monthlyPayment || 0;
 
     const housingSubs = state.subscriptions
       .filter((s) => s.active && s.section === 'housing')
-      .reduce((sum, s) => sum + getMonthlyAmount(s.amount, s.billingCycle), 0);
+      .reduce((sum, s) => sum + getSubscriptionMonthAmount(s), 0);
 
     const housingExpenses = housingSubs + mortgagePayment;
     const totalMonthlyExpenses = recurringExpenses + housingExpenses;

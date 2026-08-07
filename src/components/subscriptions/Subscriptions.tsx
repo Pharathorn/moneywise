@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Plus, Pencil, Trash2, CreditCard, TrendingUp, TrendingDown, ArrowRightLeft } from 'lucide-react';
 import { useApp } from '../../context/DataContext';
 import { Subscription, TransactionType, PaymentMethod, PAYMENT_METHODS } from '../../types';
-import { formatCurrency, getDaysUntil, getMonthlyAmount, generateId } from '../../utils/formatters';
+import { formatCurrency, getDaysUntil, getSubscriptionMonthAmount, generateId } from '../../utils/formatters';
 import { Button } from '../ui/Button';
 import { Input, Select } from '../ui/Input';
 import { Modal } from '../ui/Modal';
@@ -39,8 +39,8 @@ export function Subscriptions() {
   const monthlyExpenseTotal = useMemo(
     () =>
       state.subscriptions
-        .filter((s) => s.active && s.type === 'expense')
-        .reduce((sum, s) => sum + getMonthlyAmount(s.amount, s.billingCycle), 0),
+        .filter((s) => s.active && s.type === 'expense' && s.section !== 'housing')
+        .reduce((sum, s) => sum + getSubscriptionMonthAmount(s), 0),
     [state.subscriptions]
   );
 
@@ -48,7 +48,7 @@ export function Subscriptions() {
     () =>
       state.subscriptions
         .filter((s) => s.active && s.type === 'income')
-        .reduce((sum, s) => sum + getMonthlyAmount(s.amount, s.billingCycle), 0),
+        .reduce((sum, s) => sum + getSubscriptionMonthAmount(s), 0),
     [state.subscriptions]
   );
 
@@ -56,7 +56,7 @@ export function Subscriptions() {
     () =>
       state.subscriptions
         .filter((s) => s.active && s.type === 'transfer')
-        .reduce((sum, s) => sum + getMonthlyAmount(s.amount, s.billingCycle), 0),
+        .reduce((sum, s) => sum + getSubscriptionMonthAmount(s), 0),
     [state.subscriptions]
   );
 

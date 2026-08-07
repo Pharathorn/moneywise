@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Home, Plus, Pencil, Trash2, Landmark, Shield, Lightbulb, Droplets, Wifi, Receipt, Building2 } from 'lucide-react';
 import { useApp } from '../../context/DataContext';
 import { Subscription, HousingConfig, PaymentMethod, PAYMENT_METHODS } from '../../types';
-import { formatCurrency, getDaysUntil, getMonthlyAmount, generateId } from '../../utils/formatters';
+import { formatCurrency, getDaysUntil, getSubscriptionMonthAmount, generateId } from '../../utils/formatters';
 import { Button } from '../ui/Button';
 import { Input, Select } from '../ui/Input';
 import { Modal } from '../ui/Modal';
@@ -110,7 +110,7 @@ export function Housing() {
   );
 
   const monthlyTotal = useMemo(
-    () => housingSubs.filter((s) => s.active).reduce((sum, s) => sum + getMonthlyAmount(s.amount, s.billingCycle), 0),
+    () => housingSubs.filter((s) => s.active).reduce((sum, s) => sum + getSubscriptionMonthAmount(s), 0),
     [housingSubs]
   );
 
