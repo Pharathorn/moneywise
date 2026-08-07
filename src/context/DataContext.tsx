@@ -95,6 +95,7 @@ interface DataContextType {
   dispatch: React.Dispatch<AppAction>;
   syncing: boolean;
   isOnline: boolean;
+  manualSync: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -224,7 +225,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible' && user) {
         const now = Date.now();
-        if (now - lastSyncRef.current > 30000) { // Throttle: max once per 30s
+        if (now - lastSyncRef.current > 10000) { // Throttle: max once per 10s
           lastSyncRef.current = now;
           loadDataFromSupabase(user.id);
         }
@@ -543,8 +544,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, [user, isOnline, syncToSupabase, persistQueue]);
 
+  const manualSync = useCallback(async () => {
+    if (user) {
+      setSyncing(true);
+      await loadDataFromSupabase(user.id);
+      if (syncQueueRef.current.length > 0) {
+        await processSyncQueue(user.id);
+      }
+      setSyncing(false);
+    }
+  }, [user, loadDataFromSupabase]);
+
   return (
-    <DataContext.Provider value={{ state, dispatch: enhancedDispatch, syncing, isOnline }}>
+    <DataContext.Provider value={{ state, dispatch: enhancedDispatch, syncing, isOnline, manualSync }}>
       {children}
     </DataContext.Provider>
   );

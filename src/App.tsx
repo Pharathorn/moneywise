@@ -9,6 +9,7 @@ import { Subscriptions } from './components/subscriptions/Subscriptions';
 import { Accounts } from './components/accounts/Accounts';
 import { Settings } from './components/settings/Settings';
 import { Housing } from './components/housing/Housing';
+import { PWAUpdatePrompt } from './components/ui/PWAUpdatePrompt';
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
               </Route>
             </Routes>
           </BrowserRouter>
+          <PWAUpdatePrompt />
         </AuthGuard>
       </DataProvider>
     </AuthProvider>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, ArrowLeftRight, CreditCard, Wallet, Home, Settings, Menu, X, LogOut, Cloud, CloudOff, Loader } from 'lucide-react';
+import { LayoutDashboard, ArrowLeftRight, CreditCard, Wallet, Home, Settings, Menu, X, LogOut, Cloud, CloudOff, Loader, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/DataContext';
 import styles from './Layout.module.css';
@@ -17,7 +17,7 @@ const navItems = [
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { signOut, user } = useAuth();
-  const { syncing, isOnline } = useApp();
+  const { syncing, isOnline, manualSync } = useApp();
 
   return (
     <div className={styles.layout}>
@@ -67,7 +67,7 @@ export function Layout() {
         </nav>
 
         <div className={styles['sidebar-footer']}>
-          <div className={styles['sync-status']}>
+          <div className={styles['sync-status']} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {syncing ? (
               <>
                 <Loader size={14} className={styles.spinning} />
@@ -83,6 +83,24 @@ export function Layout() {
                 <CloudOff size={14} style={{ color: '#f97316' }} />
                 <span>Offline</span>
               </>
+            )}
+            {isOnline && !syncing && (
+              <button
+                onClick={() => manualSync()}
+                title="Sincronizar ahora"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  padding: '2px',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <RefreshCw size={14} />
+              </button>
             )}
           </div>
 
