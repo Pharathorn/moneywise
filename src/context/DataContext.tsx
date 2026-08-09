@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
-import { AppState, AppAction, Account, Transaction, Subscription, Category, TransactionType, PaymentMethod, HousingConfig, SubscriptionSection } from '../types';
+import { AppState, AppAction, Account, Transaction, Subscription, Category, TransactionType, PaymentMethod, HousingConfig, SubscriptionSection, Debt } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { defaultCategories } from '../utils/categories';
 import { supabase } from '../lib/supabase';
@@ -10,6 +10,7 @@ const initialState: AppState = {
   subscriptions: [],
   categories: defaultCategories,
   accounts: [],
+  debts: [],
 };
 
 function migrateData(data: unknown): AppState {
@@ -20,6 +21,7 @@ function migrateData(data: unknown): AppState {
     categories: Array.isArray(d.categories) ? d.categories : defaultCategories,
     accounts: Array.isArray(d.accounts) ? d.accounts : [],
     housingConfig: d.housingConfig as HousingConfig | undefined,
+    debts: Array.isArray(d.debts) ? d.debts : [],
   };
 }
 
@@ -85,6 +87,20 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return action.payload;
     case 'SET_HOUSING_CONFIG':
       return { ...state, housingConfig: action.payload };
+    case 'ADD_DEBT':
+      return { ...state, debts: [...state.debts, action.payload] };
+    case 'UPDATE_DEBT':
+      return {
+        ...state,
+        debts: state.debts.map((d) =>
+          d.id === action.payload.id ? action.payload : d
+        ),
+      };
+    case 'DELETE_DEBT':
+      return {
+        ...state,
+        debts: state.debts.filter((d) => d.id !== action.payload),
+      };
     default:
       return state;
   }
@@ -172,6 +188,22 @@ function rowToHousingConfig(row: Record<string, unknown>): HousingConfig {
   };
 }
 
+function rowToDebt(row: Record<string, unknown>): Debt {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    amount: Number(row.amount),
+    type: row.type as 'pay' | 'collect',
+    accountId: row.account_id as string | undefined,
+    dueDate: row.due_date as string | undefined,
+    status: row.status as 'pending' | 'completed',
+    notes: row.notes as string | undefined,
+    color: row.color as string | undefined,
+    createdAt: row.created_at as string,
+    completedAt: row.completed_at as string | undefined,
+  };
+}
+
 export function DataProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [storedData, setStoredData] = useLocalStorage<AppState>('moneywise-data', initialState);
@@ -252,12 +284,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const loadDataFromSupabase = async (userId: string) => {
     setSyncing(true);
     try {
-      const [accountsRes, categoriesRes, transactionsRes, subscriptionsRes, housingRes] = await Promise.all([
+      const [accountsRes, categoriesRes, transactionsRes, subscriptionsRes, housingRes, debtsRes] = await Promise.all([
         supabase.from('accounts').select('*').eq('user_id', userId),
         supabase.from('categories').select('*').eq('user_id', userId),
         supabase.from('transactions').select('*').eq('user_id', userId),
         supabase.from('subscriptions').select('*').eq('user_id', userId),
         supabase.from('housing_config').select('*').eq('user_id', userId).maybeSingle(),
+        supabase.from('debts').select('*').eq('user_id', userId),
       ]);
 
       if (accountsRes.error) console.error('Error loading accounts:', accountsRes.error);
@@ -265,6 +298,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (transactionsRes.error) console.error('Error loading transactions:', transactionsRes.error);
       if (subscriptionsRes.error) console.error('Error loading subscriptions:', subscriptionsRes.error);
       if (housingRes.error) console.error('Error loading housing:', housingRes.error);
+      if (debtsRes.error) console.error('Error loading debts:', debtsRes.error);
 
       console.log('[Sync] Loaded:', {
         accounts: (accountsRes.data || []).length,
@@ -272,6 +306,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         transactions: (transactionsRes.data || []).length,
         subscriptions: (subscriptionsRes.data || []).length,
         housing: housingRes.data ? 1 : 0,
+        debts: (debtsRes.data || []).length,
       });
 
       const remoteAccounts = (accountsRes.data || []).map(rowToAccount);
@@ -279,8 +314,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const remoteTransactions = (transactionsRes.data || []).map(rowToTransaction);
       const remoteSubscriptions = (subscriptionsRes.data || []).map(rowToSubscription);
       const remoteHousing = housingRes.data ? rowToHousingConfig(housingRes.data) : undefined;
+      const remoteDebts = (debtsRes.data || []).map(rowToDebt);
 
-      if (remoteAccounts.length > 0 || remoteTransactions.length > 0 || remoteSubscriptions.length > 0) {
+      if (remoteAccounts.length > 0 || remoteTransactions.length > 0 || remoteSubscriptions.length > 0 || remoteDebts.length > 0) {
         dispatch({
           type: 'LOAD_DATA',
           payload: {
@@ -289,6 +325,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             transactions: remoteTransactions,
             subscriptions: remoteSubscriptions,
             housingConfig: remoteHousing,
+            debts: remoteDebts,
           },
         });
       } else if (!hasMigratedRef.current) {
@@ -533,6 +570,41 @@ export function DataProvider({ children }: { children: ReactNode }) {
           term_months: action.payload.termMonths,
           interest_rate: action.payload.interestRate,
         });
+        if (result.error) throw result.error;
+        break;
+
+      case 'ADD_DEBT':
+        result = await supabase.from('debts').upsert({
+          id: action.payload.id,
+          user_id: userId,
+          name: action.payload.name,
+          amount: action.payload.amount,
+          type: action.payload.type,
+          account_id: action.payload.accountId,
+          due_date: action.payload.dueDate,
+          status: action.payload.status,
+          notes: action.payload.notes,
+          color: action.payload.color,
+          completed_at: action.payload.completedAt,
+        });
+        if (result.error) throw result.error;
+        break;
+      case 'UPDATE_DEBT':
+        result = await supabase.from('debts').update({
+          name: action.payload.name,
+          amount: action.payload.amount,
+          type: action.payload.type,
+          account_id: action.payload.accountId,
+          due_date: action.payload.dueDate,
+          status: action.payload.status,
+          notes: action.payload.notes,
+          color: action.payload.color,
+          completed_at: action.payload.completedAt,
+        }).eq('id', action.payload.id);
+        if (result.error) throw result.error;
+        break;
+      case 'DELETE_DEBT':
+        result = await supabase.from('debts').delete().eq('id', action.payload);
         if (result.error) throw result.error;
         break;
     }

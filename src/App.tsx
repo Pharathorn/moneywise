@@ -9,6 +9,7 @@ import { Subscriptions } from './components/subscriptions/Subscriptions';
 import { Accounts } from './components/accounts/Accounts';
 import { Settings } from './components/settings/Settings';
 import { Housing } from './components/housing/Housing';
+import { Debts } from './components/debts/Debts';
 import { PWAUpdatePrompt } from './components/ui/PWAUpdatePrompt';
 
 export default function App() {
@@ -24,6 +25,7 @@ export default function App() {
                 <Route path="/transactions" element={<Transactions />} />
                 <Route path="/subscriptions" element={<Subscriptions />} />
                 <Route path="/housing" element={<Housing />} />
+                <Route path="/debts" element={<Debts />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
             </Routes>

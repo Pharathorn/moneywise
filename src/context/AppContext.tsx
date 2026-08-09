@@ -8,6 +8,7 @@ const initialState: AppState = {
   subscriptions: [],
   categories: defaultCategories,
   accounts: [],
+  debts: [],
 };
 
 function migrateData(data: unknown): AppState {
@@ -17,6 +18,7 @@ function migrateData(data: unknown): AppState {
     subscriptions: Array.isArray(d.subscriptions) ? d.subscriptions : [],
     categories: Array.isArray(d.categories) ? d.categories : defaultCategories,
     accounts: Array.isArray(d.accounts) ? d.accounts : [],
+    debts: Array.isArray(d.debts) ? d.debts : [],
   };
 }
 
@@ -80,6 +82,20 @@ function appReducer(state: AppState, action: AppAction): AppState {
       };
     case 'LOAD_DATA':
       return action.payload;
+    case 'ADD_DEBT':
+      return { ...state, debts: [...state.debts, action.payload] };
+    case 'UPDATE_DEBT':
+      return {
+        ...state,
+        debts: state.debts.map((d) =>
+          d.id === action.payload.id ? action.payload : d
+        ),
+      };
+    case 'DELETE_DEBT':
+      return {
+        ...state,
+        debts: state.debts.filter((d) => d.id !== action.payload),
+      };
     default:
       return state;
   }

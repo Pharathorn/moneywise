@@ -92,7 +92,24 @@ export type AppAction =
   | { type: 'UPDATE_ACCOUNT'; payload: Account }
   | { type: 'DELETE_ACCOUNT'; payload: string }
   | { type: 'SET_HOUSING_CONFIG'; payload: HousingConfig }
+  | { type: 'ADD_DEBT'; payload: Debt }
+  | { type: 'UPDATE_DEBT'; payload: Debt }
+  | { type: 'DELETE_DEBT'; payload: string }
   | { type: 'LOAD_DATA'; payload: AppState };
+
+export interface Debt {
+  id: string;
+  name: string;
+  amount: number;
+  type: 'pay' | 'collect';
+  accountId?: string;
+  dueDate?: string;
+  status: 'pending' | 'completed';
+  notes?: string;
+  color?: string;
+  createdAt: string;
+  completedAt?: string;
+}
 
 export interface AppState {
   transactions: Transaction[];
@@ -100,4 +117,5 @@ export interface AppState {
   categories: Category[];
   accounts: Account[];
   housingConfig?: HousingConfig;
+  debts: Debt[];
 }
