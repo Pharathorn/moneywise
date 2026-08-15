@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Wallet, CreditCard, Landmark, Home, PiggyBank } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useApp } from '../../context/DataContext';
-import { formatCurrency, getCurrentMonthKey, getSubscriptionMonthAmount } from '../../utils/formatters';
+import { formatCurrency, getCurrentMonthKey, getSubscriptionMonthAmount, isPaidThisCycle } from '../../utils/formatters';
 import styles from './Dashboard.module.css';
 
 export function Dashboard() {
@@ -102,7 +102,7 @@ export function Dashboard() {
   const upcomingSubscriptions = useMemo(
     () =>
       state.subscriptions
-        .filter((s) => s.active)
+        .filter((s) => s.active && !isPaidThisCycle(s.nextPayment))
         .sort((a, b) => new Date(a.nextPayment).getTime() - new Date(b.nextPayment).getTime())
         .slice(0, 8),
     [state.subscriptions]
