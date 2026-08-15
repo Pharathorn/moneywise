@@ -33,7 +33,7 @@ export async function showLocalNotification(title: string, body: string, tag: st
   if (!areNotificationsEnabled()) return;
   if ('serviceWorker' in navigator) {
     const reg = await navigator.serviceWorker.ready;
-    reg.showNotification(title, { body, icon: '/favicon.svg', tag });
+    reg.showNotification(title, { body, icon: '/favicon.png', tag });
   } else {
     new Notification(title, { body, tag });
   }

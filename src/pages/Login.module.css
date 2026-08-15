@@ -3,8 +3,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 3rem;
   background: var(--bg-page);
   padding: 1rem;
+}
+
+.hero {
+  flex-shrink: 0;
+  max-width: 360px;
+}
+.hero img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .hero {
+    display: none;
+  }
 }
 
 .card {

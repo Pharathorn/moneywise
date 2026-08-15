@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.png'],
       manifest: {
         name: 'Wash My Cash - Gestor de Finanzas',
         short_name: 'Wash My Cash',
@@ -19,9 +19,15 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: 'favicon.svg',
-            sizes: 'any',
-            type: 'image/svg+xml'
+            src: 'favicon.png',
+            sizes: '512x512',
+            type: 'image/png'
+          },
+          {
+            src: 'favicon.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       }

@@ -29,6 +29,9 @@ export function Login({ onToggleMode }: LoginProps) {
 
   return (
     <div className={styles.container}>
+      <div className={styles.hero}>
+        <img src="/login-illustration.png" alt="Wash My Cash" />
+      </div>
       <div className={styles.card}>
         <div className={styles.logo}>
           <div className={styles['logo-icon']}>
