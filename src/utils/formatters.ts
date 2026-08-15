@@ -104,3 +104,20 @@ export function getRolledOverDate(nextPayment: string, billingCycle: string): st
 export function needsRollover(nextPayment: string, billingCycle: string): boolean {
   return getRolledOverDate(nextPayment, billingCycle) !== nextPayment;
 }
+
+// For calendar display: projects a recurring item's date into an arbitrary
+// (year, month) without mutating anything. Monthly/yearly items always land
+// on the same day-of-month (clamped to the shortest month); weekly items
+// aren't projected across months (too many occurrences to be useful here) —
+// they only show up if their stored date already falls in that month.
+export function getOccurrenceInMonth(nextPayment: string, billingCycle: string, year: number, month: number): string | null {
+  const d = new Date(nextPayment);
+  if (billingCycle === 'weekly') {
+    return d.getFullYear() === year && d.getMonth() === month ? nextPayment : null;
+  }
+  if (billingCycle === 'yearly' && d.getMonth() !== month) return null;
+
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const day = Math.min(d.getDate(), lastDay);
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}

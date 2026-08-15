@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, ArrowLeftRight, CreditCard, Wallet, Home, Settings, Menu, X, LogOut, Cloud, CloudOff, Loader, RefreshCw, HandCoins } from 'lucide-react';
+import { LayoutDashboard, ArrowLeftRight, CreditCard, Wallet, Home, Settings, Menu, X, LogOut, Cloud, CloudOff, Loader, RefreshCw, HandCoins, CalendarDays } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/DataContext';
 import styles from './Layout.module.css';
@@ -10,6 +10,7 @@ const navItems = [
   { to: '/accounts', icon: Wallet, label: 'Cuentas' },
   { to: '/transactions', icon: ArrowLeftRight, label: 'Transacciones' },
   { to: '/subscriptions', icon: CreditCard, label: 'Suscripciones' },
+  { to: '/calendar', icon: CalendarDays, label: 'Calendario' },
   { to: '/housing', icon: Home, label: 'Vivienda' },
   { to: '/debts', icon: HandCoins, label: 'Deudas' },
   { to: '/settings', icon: Settings, label: 'Ajustes' },
