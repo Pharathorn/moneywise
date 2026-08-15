@@ -2,6 +2,7 @@ import { createContext, useContext, useReducer, useEffect, useState, ReactNode, 
 import { AppState, AppAction, Account, Transaction, Subscription, Category, TransactionType, PaymentMethod, HousingConfig, SubscriptionSection, Debt } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { defaultCategories } from '../utils/categories';
+import { needsRollover, getRolledOverDate } from '../utils/formatters';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 
@@ -666,6 +667,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setSyncing(false);
     }
   }, [user, loadDataFromSupabase]);
+
+  // Roll active subscriptions forward once their billing period has fully
+  // elapsed (e.g. the calendar month changed), so "days until" resets
+  // instead of sitting stuck on a past-due date forever.
+  useEffect(() => {
+    state.subscriptions
+      .filter((s) => s.active && needsRollover(s.nextPayment, s.billingCycle))
+      .forEach((s) => {
+        enhancedDispatch({
+          type: 'UPDATE_SUBSCRIPTION',
+          payload: { ...s, nextPayment: getRolledOverDate(s.nextPayment, s.billingCycle) },
+        });
+      });
+  }, [state.subscriptions, enhancedDispatch]);
 
   return (
     <DataContext.Provider value={{ state, dispatch: enhancedDispatch, syncing, isOnline, manualSync, syncError }}>

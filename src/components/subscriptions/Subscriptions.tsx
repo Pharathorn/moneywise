@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Plus, Pencil, Trash2, CreditCard, TrendingUp, TrendingDown, ArrowRightLeft } from 'lucide-react';
 import { useApp } from '../../context/DataContext';
 import { Subscription, TransactionType, PaymentMethod, PAYMENT_METHODS } from '../../types';
-import { formatCurrency, getDaysUntil, getSubscriptionMonthAmount, generateId } from '../../utils/formatters';
+import { formatCurrency, getDaysUntil, getSubscriptionMonthAmount, generateId, isPaidThisCycle } from '../../utils/formatters';
 import { Button } from '../ui/Button';
 import { Input, Select } from '../ui/Input';
 import { Modal } from '../ui/Modal';
@@ -67,6 +67,9 @@ export function Subscriptions() {
         .sort((a, b) => {
           if (a.type !== b.type) return a.type === 'income' ? -1 : a.type === 'expense' ? 1 : 2;
           if (a.active !== b.active) return a.active ? -1 : 1;
+          const aPaid = isPaidThisCycle(a.nextPayment);
+          const bPaid = isPaidThisCycle(b.nextPayment);
+          if (aPaid !== bPaid) return aPaid ? 1 : -1;
           return new Date(a.nextPayment).getTime() - new Date(b.nextPayment).getTime();
         }),
     [state.subscriptions]
@@ -176,13 +179,14 @@ export function Subscriptions() {
 
   const renderCard = (s: Subscription) => {
     const days = getDaysUntil(s.nextPayment);
+    const paid = isPaidThisCycle(s.nextPayment);
     const cat = state.categories.find((c) => c.id === s.category);
     const accountName = getAccountName(s.accountId);
     const toAccountName = getAccountName(s.toAccountId);
     const paymentLabel = getPaymentMethodLabel(s.paymentMethod);
 
     return (
-      <div key={s.id} className={`${styles['sub-card']} ${styles[`sub-${s.type}`]} ${!s.active ? styles.inactive : ''}`}>
+      <div key={s.id} className={`${styles['sub-card']} ${styles[`sub-${s.type}`]} ${!s.active ? styles.inactive : ''} ${paid ? styles.paid : ''}`}>
         <div className={styles['sub-header']}>
           <div className={styles['sub-info']}>
             {s.image ? (
@@ -238,9 +242,9 @@ export function Subscriptions() {
             <span className={styles['sub-detail-value']}>{s.nextPayment}</span>
           </div>
           <div className={styles['sub-detail']}>
-            <span className={styles['sub-detail-label']}>Faltan</span>
-            <span className={`${styles['days-badge']} ${days <= 7 ? styles.soon : styles.ok}`}>
-              {days} días
+            <span className={styles['sub-detail-label']}>{paid ? 'Estado' : 'Faltan'}</span>
+            <span className={`${styles['days-badge']} ${paid ? styles.paid : days <= 7 ? styles.soon : styles.ok}`}>
+              {paid ? 'Pagado' : `${days} días`}
             </span>
           </div>
         </div>

@@ -105,6 +105,9 @@
 .sub-card.inactive {
   opacity: 0.5;
 }
+.sub-card.paid {
+  opacity: 0.6;
+}
 .sub-income {
   border-left: 3px solid #22c55e;
 }
@@ -248,6 +251,10 @@
 .days-badge.ok {
   background: #f0fdf4;
   color: #16a34a;
+}
+.days-badge.paid {
+  background: #f1f5f9;
+  color: #64748b;
 }
 
 .type-toggle {

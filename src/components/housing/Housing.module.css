@@ -155,6 +155,10 @@
   opacity: 0.5;
 }
 
+.sub-card.paid {
+  opacity: 0.6;
+}
+
 .sub-header {
   display: flex;
   align-items: flex-start;

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Home, Plus, Pencil, Trash2, Landmark, Shield, Lightbulb, Droplets, Wifi, Receipt, Building2 } from 'lucide-react';
 import { useApp } from '../../context/DataContext';
 import { Subscription, HousingConfig, PaymentMethod, PAYMENT_METHODS } from '../../types';
-import { formatCurrency, getDaysUntil, getSubscriptionMonthAmount, generateId } from '../../utils/formatters';
+import { formatCurrency, getDaysUntil, getSubscriptionMonthAmount, generateId, isPaidThisCycle } from '../../utils/formatters';
 import { Button } from '../ui/Button';
 import { Input, Select } from '../ui/Input';
 import { Modal } from '../ui/Modal';
@@ -104,6 +104,9 @@ export function Housing() {
         .filter((s) => s.section === 'housing')
         .sort((a, b) => {
           if (a.active !== b.active) return a.active ? -1 : 1;
+          const aPaid = isPaidThisCycle(a.nextPayment);
+          const bPaid = isPaidThisCycle(b.nextPayment);
+          if (aPaid !== bPaid) return aPaid ? 1 : -1;
           return new Date(a.nextPayment).getTime() - new Date(b.nextPayment).getTime();
         }),
     [state.subscriptions]
@@ -326,13 +329,14 @@ export function Housing() {
           <div className={styles['subs-grid']}>
             {housingSubs.map((s) => {
               const days = getDaysUntil(s.nextPayment);
+              const paid = isPaidThisCycle(s.nextPayment);
               const catInfo = getCatInfo(s.category);
               const CatIcon = catInfo.icon;
               const accountName = getAccountName(s.accountId);
               const paymentLabel = getPaymentMethodLabel(s.paymentMethod);
 
               return (
-                <div key={s.id} className={`${styles['sub-card']} ${!s.active ? styles.inactive : ''}`}>
+                <div key={s.id} className={`${styles['sub-card']} ${!s.active ? styles.inactive : ''} ${paid ? styles.paid : ''}`}>
                   <div className={styles['sub-header']}>
                     <div className={styles['sub-info']}>
                       {s.image ? (
@@ -375,9 +379,9 @@ export function Housing() {
                       <span className={styles['sub-detail-value']}>{s.nextPayment}</span>
                     </div>
                     <div className={styles['detail-item']}>
-                      <span className={styles['detail-label']}>Faltan</span>
-                      <span className={styles['sub-detail-value']} style={{ color: days <= 7 ? '#ef4444' : days <= 14 ? '#f97316' : '#22c55e' }}>
-                        {days} días
+                      <span className={styles['detail-label']}>{paid ? 'Estado' : 'Faltan'}</span>
+                      <span className={styles['sub-detail-value']} style={{ color: paid ? '#64748b' : days <= 7 ? '#ef4444' : days <= 14 ? '#f97316' : '#22c55e' }}>
+                        {paid ? 'Pagado' : `${days} días`}
                       </span>
                     </div>
                   </div>

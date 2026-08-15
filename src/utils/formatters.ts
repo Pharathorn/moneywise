@@ -66,3 +66,41 @@ export function getSubscriptionMonthAmount(subscription: { amount: number; billi
   }
   return getMonthlyAmount(subscription.amount, subscription.billingCycle);
 }
+
+export function isPaidThisCycle(nextPayment: string): boolean {
+  return getDaysUntil(nextPayment) <= 0;
+}
+
+function advanceOnce(date: Date, billingCycle: string): void {
+  if (billingCycle === 'weekly') date.setDate(date.getDate() + 7);
+  else if (billingCycle === 'yearly') date.setFullYear(date.getFullYear() + 1);
+  else date.setMonth(date.getMonth() + 1);
+}
+
+// Whether `now` still falls within the billing period that `due` belongs to
+// (same month for monthly, same 7-day span for weekly, same year for yearly).
+function withinSamePeriod(due: Date, now: Date, billingCycle: string): boolean {
+  if (billingCycle === 'yearly') return due.getFullYear() === now.getFullYear();
+  if (billingCycle === 'weekly') {
+    const diffDays = Math.floor((now.getTime() - due.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 && diffDays < 7;
+  }
+  return due.getFullYear() === now.getFullYear() && due.getMonth() === now.getMonth();
+}
+
+// Advances a past-due `nextPayment` to the next occurrence once its billing
+// period has fully elapsed (e.g. once the calendar month has changed for a
+// monthly subscription). Stays put while still "paid" within the same period.
+export function getRolledOverDate(nextPayment: string, billingCycle: string): string {
+  const due = new Date(nextPayment);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  while (due < now && !withinSamePeriod(due, now, billingCycle)) {
+    advanceOnce(due, billingCycle);
+  }
+  return due.toISOString().split('T')[0];
+}
+
+export function needsRollover(nextPayment: string, billingCycle: string): boolean {
+  return getRolledOverDate(nextPayment, billingCycle) !== nextPayment;
+}
