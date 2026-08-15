@@ -30,9 +30,7 @@ export function Layout() {
       <div className={styles['mobile-header']}>
         <div className={styles['mobile-logo']}>
           <div className={styles['logo-icon']}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
+            <img src="/favicon.png" alt="" />
           </div>
           <span className={styles['logo-text']}>Wash My Cash</span>
         </div>
@@ -48,9 +46,7 @@ export function Layout() {
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.open : ''}`}>
         <div className={styles.logo}>
           <div className={styles['logo-icon']}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
+            <img src="/favicon.png" alt="" />
           </div>
           <span className={styles['logo-text']}>Wash My Cash</span>
         </div>
