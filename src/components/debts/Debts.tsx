@@ -218,6 +218,14 @@ export function Debts() {
     <div>
       <div className={styles.header}>
         <h1 className={styles.title}>Deudas</h1>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <Button icon={<ArrowDownCircle size={18} />} onClick={() => openCreateModal('pay')}>
+            Deuda por pagar
+          </Button>
+          <Button variant="secondary" icon={<ArrowUpCircle size={18} />} onClick={() => openCreateModal('collect')}>
+            Deuda por cobrar
+          </Button>
+        </div>
       </div>
 
       <div className={styles['totals-row']}>
@@ -277,14 +285,6 @@ export function Debts() {
 
       {pendingDebts.length === 0 && (
         <div className={styles['empty-state']}>
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-            <Button icon={<ArrowDownCircle size={18} />} onClick={() => openCreateModal('pay')}>
-              Deuda por pagar
-            </Button>
-            <Button variant="secondary" icon={<ArrowUpCircle size={18} />} onClick={() => openCreateModal('collect')}>
-              Deuda por cobrar
-            </Button>
-          </div>
           <p style={{ color: 'var(--text-muted)' }}>No hay deudas pendientes</p>
         </div>
       )}
