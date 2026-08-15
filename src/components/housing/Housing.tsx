@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Home, Plus, Pencil, Trash2, Landmark, Shield, Lightbulb, Droplets, Wifi, Receipt, Building2 } from 'lucide-react';
+import { Home, Plus, Pencil, Trash2, Landmark, Shield, Lightbulb, Droplets, Wifi, Receipt, Building2, CheckCircle2 } from 'lucide-react';
 import { useApp } from '../../context/DataContext';
 import { Subscription, HousingConfig, PaymentMethod, PAYMENT_METHODS } from '../../types';
 import { formatCurrency, getDaysUntil, getSubscriptionMonthAmount, generateId, isPaidThisCycle } from '../../utils/formatters';
@@ -9,6 +9,8 @@ import { Modal } from '../ui/Modal';
 import styles from './Housing.module.css';
 
 const COLORS = ['#6366f1', '#0ea5e9', '#eab308', '#06b6d4', '#8b5cf6', '#f97316', '#64748b', '#ef4444'];
+
+const CYCLE_ORDER: Record<string, number> = { monthly: 0, weekly: 1, yearly: 2 };
 
 const HOUSING_CATEGORIES = [
   { id: 'cat-hipoteca', name: 'Hipoteca', icon: Landmark },
@@ -104,6 +106,7 @@ export function Housing() {
         .filter((s) => s.section === 'housing')
         .sort((a, b) => {
           if (a.active !== b.active) return a.active ? -1 : 1;
+          if (a.billingCycle !== b.billingCycle) return CYCLE_ORDER[a.billingCycle] - CYCLE_ORDER[b.billingCycle];
           const aPaid = isPaidThisCycle(a.nextPayment);
           const bPaid = isPaidThisCycle(b.nextPayment);
           if (aPaid !== bPaid) return aPaid ? 1 : -1;
@@ -336,7 +339,7 @@ export function Housing() {
               const paymentLabel = getPaymentMethodLabel(s.paymentMethod);
 
               return (
-                <div key={s.id} className={`${styles['sub-card']} ${!s.active ? styles.inactive : ''} ${paid ? styles.paid : ''}`}>
+                <div key={s.id} className={`${styles['sub-card']} ${!s.active ? styles.inactive : ''} ${paid && s.active ? styles.paid : ''}`}>
                   <div className={styles['sub-header']}>
                     <div className={styles['sub-info']}>
                       {s.image ? (
@@ -380,8 +383,8 @@ export function Housing() {
                     </div>
                     <div className={styles['detail-item']}>
                       <span className={styles['detail-label']}>{paid ? 'Estado' : 'Faltan'}</span>
-                      <span className={styles['sub-detail-value']} style={{ color: paid ? '#64748b' : days <= 7 ? '#ef4444' : days <= 14 ? '#f97316' : '#22c55e' }}>
-                        {paid ? 'Pagado' : `${days} días`}
+                      <span className={styles['sub-detail-value']} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: paid ? '#16a34a' : days <= 7 ? '#ef4444' : days <= 14 ? '#f97316' : '#22c55e' }}>
+                        {paid ? (<><CheckCircle2 size={12} /> Pagado</>) : `${days} días`}
                       </span>
                     </div>
                   </div>

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Pencil, Trash2, CreditCard, TrendingUp, TrendingDown, ArrowRightLeft } from 'lucide-react';
+import { Plus, Pencil, Trash2, CreditCard, TrendingUp, TrendingDown, ArrowRightLeft, CheckCircle2 } from 'lucide-react';
 import { useApp } from '../../context/DataContext';
 import { Subscription, TransactionType, PaymentMethod, PAYMENT_METHODS } from '../../types';
 import { formatCurrency, getDaysUntil, getSubscriptionMonthAmount, generateId, isPaidThisCycle } from '../../utils/formatters';
@@ -15,6 +15,12 @@ const CYCLE_LABELS: Record<string, string> = {
   monthly: 'Mensual',
   yearly: 'Anual',
 };
+
+// Keeps monthly, weekly and yearly payments in separate clusters instead of
+// interleaving them purely by days-remaining (an annual payment due in 300+
+// days would otherwise sort miles away from monthly ones, and vice versa
+// once it gets close).
+const CYCLE_ORDER: Record<string, number> = { monthly: 0, weekly: 1, yearly: 2 };
 
 export function Subscriptions() {
   const { state, dispatch } = useApp();
@@ -67,6 +73,7 @@ export function Subscriptions() {
         .sort((a, b) => {
           if (a.type !== b.type) return a.type === 'income' ? -1 : a.type === 'expense' ? 1 : 2;
           if (a.active !== b.active) return a.active ? -1 : 1;
+          if (a.billingCycle !== b.billingCycle) return CYCLE_ORDER[a.billingCycle] - CYCLE_ORDER[b.billingCycle];
           const aPaid = isPaidThisCycle(a.nextPayment);
           const bPaid = isPaidThisCycle(b.nextPayment);
           if (aPaid !== bPaid) return aPaid ? 1 : -1;
@@ -186,7 +193,7 @@ export function Subscriptions() {
     const paymentLabel = getPaymentMethodLabel(s.paymentMethod);
 
     return (
-      <div key={s.id} className={`${styles['sub-card']} ${styles[`sub-${s.type}`]} ${!s.active ? styles.inactive : ''} ${paid ? styles.paid : ''}`}>
+      <div key={s.id} className={`${styles['sub-card']} ${styles[`sub-${s.type}`]} ${!s.active ? styles.inactive : ''} ${paid && s.active ? styles.paid : ''}`}>
         <div className={styles['sub-header']}>
           <div className={styles['sub-info']}>
             {s.image ? (
@@ -244,7 +251,7 @@ export function Subscriptions() {
           <div className={styles['sub-detail']}>
             <span className={styles['sub-detail-label']}>{paid ? 'Estado' : 'Faltan'}</span>
             <span className={`${styles['days-badge']} ${paid ? styles.paid : days <= 7 ? styles.soon : styles.ok}`}>
-              {paid ? 'Pagado' : `${days} días`}
+              {paid ? (<><CheckCircle2 size={12} /> Pagado</>) : `${days} días`}
             </span>
           </div>
         </div>
