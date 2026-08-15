@@ -2,7 +2,8 @@ import { createContext, useContext, useReducer, useEffect, useState, ReactNode, 
 import { AppState, AppAction, Account, Transaction, Subscription, Category, TransactionType, PaymentMethod, HousingConfig, SubscriptionSection, Debt, Budget } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { defaultCategories } from '../utils/categories';
-import { needsRollover, getRolledOverDate, isPaidThisCycle, generateId } from '../utils/formatters';
+import { needsRollover, getRolledOverDate, isPaidThisCycle, generateId, getDaysUntil, formatCurrency } from '../utils/formatters';
+import { areNotificationsEnabled, showLocalNotification } from '../utils/notifications';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 
@@ -763,6 +764,40 @@ export function DataProvider({ children }: { children: ReactNode }) {
         });
       });
   }, [state.subscriptions, state.transactions, enhancedDispatch]);
+
+  // Local "due soon" reminders. Fires when the app is opened (not a true
+  // background push, there's no server to trigger it while the app is
+  // closed) — dedupes per subscription+due-date so it only shows once.
+  useEffect(() => {
+    if (!areNotificationsEnabled()) return;
+
+    const NOTIFIED_KEY = 'moneywise-notified-payments';
+    let notified: string[] = [];
+    try {
+      notified = JSON.parse(localStorage.getItem(NOTIFIED_KEY) || '[]');
+    } catch {
+      notified = [];
+    }
+
+    const dueSoon = state.subscriptions.filter((s) => {
+      if (!s.active) return false;
+      const days = getDaysUntil(s.nextPayment);
+      return days >= 0 && days <= 2;
+    });
+
+    const toNotify = dueSoon.filter((s) => !notified.includes(`${s.id}:${s.nextPayment}`));
+    if (toNotify.length === 0) return;
+
+    toNotify.forEach((s) => {
+      const days = getDaysUntil(s.nextPayment);
+      const title = days === 0 ? `${s.name} se cobra hoy` : `${s.name} se cobra en ${days} día${days === 1 ? '' : 's'}`;
+      const body = `${s.type === 'income' ? '+' : '-'}${formatCurrency(s.amount)}`;
+      showLocalNotification(title, body, `${s.id}:${s.nextPayment}`);
+    });
+
+    const updated = [...notified, ...toNotify.map((s) => `${s.id}:${s.nextPayment}`)].slice(-200);
+    localStorage.setItem(NOTIFIED_KEY, JSON.stringify(updated));
+  }, [state.subscriptions]);
 
   return (
     <DataContext.Provider value={{ state, dispatch: enhancedDispatch, syncing, isOnline, manualSync, syncError }}>

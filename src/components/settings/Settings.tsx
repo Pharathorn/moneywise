@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, Download, Upload, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Download, Upload, X, Bell, BellOff } from 'lucide-react';
 import { useApp } from '../../context/DataContext';
 import { Category, TransactionType } from '../../types';
 import { formatCurrency, generateId } from '../../utils/formatters';
+import { areNotificationsEnabled, getNotificationPermission, requestNotificationPermission, setNotificationsEnabled } from '../../utils/notifications';
 import { Button } from '../ui/Button';
 import { Input, Select } from '../ui/Input';
 import styles from './Settings.module.css';
@@ -20,6 +21,18 @@ export function Settings() {
     type: 'expense' as TransactionType,
   });
   const [budgetDrafts, setBudgetDrafts] = useState<Record<string, string>>({});
+  const [notifEnabled, setNotifEnabled] = useState(areNotificationsEnabled());
+  const permission = getNotificationPermission();
+
+  const handleToggleNotifications = async () => {
+    if (notifEnabled) {
+      setNotificationsEnabled(false);
+      setNotifEnabled(false);
+      return;
+    }
+    const granted = await requestNotificationPermission();
+    setNotifEnabled(granted);
+  };
 
   const getBudgetDraft = (categoryId: string) => {
     if (categoryId in budgetDrafts) return budgetDrafts[categoryId];
@@ -287,6 +300,27 @@ export function Settings() {
             </div>
           </div>
         )}
+      </div>
+
+      <div className={styles.section}>
+        <div className={styles['section-header']} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h3 className={styles['section-title']}>Notificaciones</h3>
+            <p className={styles['section-subtitle']}>
+              {permission === 'denied'
+                ? 'Bloqueadas en el navegador/iPhone. Actívalas en los ajustes del sistema.'
+                : 'Avisa cuando un recurrente vence en 2 días o menos (al abrir la app)'}
+            </p>
+          </div>
+          <Button
+            variant={notifEnabled ? 'secondary' : 'primary'}
+            icon={notifEnabled ? <BellOff size={16} /> : <Bell size={16} />}
+            onClick={handleToggleNotifications}
+            disabled={permission === 'denied'}
+          >
+            {notifEnabled ? 'Desactivar' : 'Activar'}
+          </Button>
+        </div>
       </div>
 
       <div className={styles.section}>
