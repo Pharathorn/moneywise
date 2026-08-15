@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, ArrowLeftRight, CreditCard, Wallet, Home, Settings, Menu, X, LogOut, Cloud, CloudOff, Loader, RefreshCw, HandCoins, CalendarDays } from 'lucide-react';
+import { LayoutDashboard, ArrowLeftRight, CreditCard, Wallet, Home, Settings, Menu, X, LogOut, Cloud, CloudOff, Loader, RefreshCw, HandCoins, CalendarDays, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/DataContext';
+import { getEffectiveTheme, toggleTheme } from '../../utils/theme';
 import styles from './Layout.module.css';
 
 const navItems = [
@@ -18,8 +19,11 @@ const navItems = [
 
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [theme, setTheme] = useState(getEffectiveTheme());
   const { signOut, user, sessionExpired } = useAuth();
   const { syncing, isOnline, manualSync, syncError } = useApp();
+
+  const handleToggleTheme = () => setTheme(toggleTheme());
 
   return (
     <div className={styles.layout}>
@@ -131,7 +135,7 @@ export function Layout() {
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#94a3b8',
+                  color: 'var(--text-muted)',
                   cursor: 'pointer',
                   padding: '2px',
                   borderRadius: '4px',
@@ -142,6 +146,23 @@ export function Layout() {
                 <RefreshCw size={14} />
               </button>
             )}
+            <button
+              onClick={handleToggleTheme}
+              title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '2px',
+                marginLeft: 'auto',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+            </button>
           </div>
 
           <div className={styles['user-info']}>

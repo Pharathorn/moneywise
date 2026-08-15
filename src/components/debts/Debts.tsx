@@ -173,7 +173,7 @@ export function Debts() {
               <div className={styles['debt-name']}>{debt.name}</div>
               <div className={styles['debt-meta']}>
                 {accountName && <span style={{ color: '#3b82f6' }}>· {accountName}</span>}
-                {debt.notes && <span style={{ color: '#94a3b8' }}>· {debt.notes}</span>}
+                {debt.notes && <span style={{ color: 'var(--text-muted)' }}>· {debt.notes}</span>}
               </div>
             </div>
           </div>
@@ -285,14 +285,14 @@ export function Debts() {
               Deuda por cobrar
             </Button>
           </div>
-          <p style={{ color: '#94a3b8' }}>No hay deudas pendientes</p>
+          <p style={{ color: 'var(--text-muted)' }}>No hay deudas pendientes</p>
         </div>
       )}
 
       {completedDebts.length > 0 && (
         <div className={styles.section} style={{ marginTop: '2rem' }}>
           <h2 className={styles['section-title']} style={{ opacity: 0.6 }}>
-            <CheckCircle size={18} style={{ color: '#94a3b8' }} />
+            <CheckCircle size={18} style={{ color: 'var(--text-muted)' }} />
             Completadas
           </h2>
           <div className={styles.grid}>
@@ -361,7 +361,7 @@ export function Debts() {
                   width: '28px',
                   height: '28px',
                   borderRadius: '50%',
-                  border: form.color === c ? '2px solid #1e293b' : '2px solid transparent',
+                  border: form.color === c ? '2px solid var(--text-primary)' : '2px solid transparent',
                   background: c,
                   cursor: 'pointer',
                 }}

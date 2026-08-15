@@ -322,7 +322,7 @@ export function Housing() {
             Gastos de hogar
           </h2>
           {monthlyTotal > 0 && (
-            <span style={{ fontSize: '0.875rem', color: '#64748b' }}>
+            <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
               {formatCurrency(monthlyTotal)} / mes
             </span>
           )}
@@ -383,7 +383,7 @@ export function Housing() {
                     </div>
                     <div className={styles['detail-item']}>
                       <span className={styles['detail-label']}>{paid ? 'Estado' : 'Faltan'}</span>
-                      <span className={styles['sub-detail-value']} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: paid ? '#16a34a' : days <= 7 ? '#ef4444' : days <= 14 ? '#f97316' : '#22c55e' }}>
+                      <span className={`${styles['days-badge']} ${paid ? styles.paid : days <= 7 ? styles.soon : styles.ok}`}>
                         {paid ? (<><CheckCircle2 size={12} /> Pagado</>) : `${days} días`}
                       </span>
                     </div>
@@ -563,7 +563,7 @@ export function Housing() {
                   width: '28px',
                   height: '28px',
                   borderRadius: '50%',
-                  border: subForm.color === c ? '2px solid #1e293b' : '2px solid transparent',
+                  border: subForm.color === c ? '2px solid var(--text-primary)' : '2px solid transparent',
                   background: c,
                   cursor: 'pointer',
                 }}

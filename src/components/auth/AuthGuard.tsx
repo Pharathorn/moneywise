@@ -19,12 +19,12 @@ export function AuthGuard({ children }: AuthGuardProps) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#fafafa'
+        background: 'var(--bg-page)'
       }}>
         <div style={{
           width: '40px',
           height: '40px',
-          border: '3px solid #e2e8f0',
+          border: '3px solid var(--border)',
           borderTopColor: '#3b82f6',
           borderRadius: '50%',
           animation: 'spin 0.8s linear infinite'

@@ -253,7 +253,7 @@ export function Accounts() {
               )}
             </div>
           </div>
-          <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.375rem' }}>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.375rem' }}>
             Pega la URL del logo de tu banco. Si no pones nada, se usará la inicial.
           </p>
         </div>

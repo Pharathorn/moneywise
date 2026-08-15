@@ -192,7 +192,9 @@ export function Settings() {
                     width: '110px',
                     padding: '0.4rem 0.6rem',
                     borderRadius: '8px',
-                    border: '1px solid #e2e8f0',
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg-card)',
+                    color: 'var(--text-primary)',
                     fontSize: '0.8125rem',
                     fontFamily: 'inherit',
                   }}
@@ -290,7 +292,7 @@ export function Settings() {
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    border: `2px solid ${newCategory.color === c ? '#1e293b' : 'transparent'}`,
+                    border: `2px solid ${newCategory.color === c ? 'var(--text-primary)' : 'transparent'}`,
                     background: c,
                     cursor: 'pointer',
                   }}

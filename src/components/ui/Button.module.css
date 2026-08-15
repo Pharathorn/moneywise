@@ -22,11 +22,11 @@
 }
 
 .button-secondary {
-  background: #f1f5f9;
-  color: #475569;
+  background: var(--border-subtle);
+  color: var(--text-tertiary);
 }
 .button-secondary:hover {
-  background: #e2e8f0;
+  background: var(--border);
 }
 
 .button-danger {
@@ -39,10 +39,10 @@
 
 .button-ghost {
   background: transparent;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 .button-ghost:hover {
-  background: #f1f5f9;
+  background: var(--border-subtle);
 }
 
 .button-sm {

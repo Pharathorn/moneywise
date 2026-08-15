@@ -130,7 +130,7 @@ export function Dashboard() {
 
   return (
     <div>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: '0 0 1.5rem 0' }}>
+      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 1.5rem 0' }}>
         Dashboard
       </h1>
 
@@ -247,7 +247,7 @@ export function Dashboard() {
                       {Math.round(b.percent)}%
                     </div>
                   </div>
-                  <div style={{ height: '6px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden', marginTop: '0.75rem' }}>
+                  <div style={{ height: '6px', background: 'var(--border-subtle)', borderRadius: '4px', overflow: 'hidden', marginTop: '0.75rem' }}>
                     <div style={{ height: '100%', width: `${Math.min(100, b.percent)}%`, background: barColor, borderRadius: '4px', transition: 'width 0.3s ease' }} />
                   </div>
                 </div>
@@ -263,10 +263,10 @@ export function Dashboard() {
           <div className={styles['chart-container']}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={monthlyData} barGap={4}>
-                <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={60} />
+                <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 12, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} width={60} />
                 <Tooltip
-                  contentStyle={{ borderRadius: 8, border: '1px solid #f1f5f9', fontSize: 13 }}
+                  contentStyle={{ borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13 }}
                   formatter={(value) => formatCurrency(Number(value))}
                 />
                 <Bar dataKey="income" fill="#22c55e" radius={[4, 4, 0, 0]} name="Ingresos" />
@@ -296,7 +296,7 @@ export function Dashboard() {
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ borderRadius: 8, border: '1px solid #f1f5f9', fontSize: 13 }}
+                    contentStyle={{ borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13 }}
                     formatter={(value) => formatCurrency(Number(value))}
                   />
                 </PieChart>
@@ -324,9 +324,9 @@ export function Dashboard() {
                     ) : (
                       <div
                         className={styles['transaction-icon']}
-                        style={{ background: cat ? `${cat.color}15` : '#f1f5f9' }}
+                        style={{ background: cat ? `${cat.color}15` : 'var(--border-subtle)' }}
                       >
-                        <span style={{ color: cat?.color || '#94a3b8', fontSize: '0.7rem', fontWeight: 600 }}>
+                        <span style={{ color: cat?.color || 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 600 }}>
                           {cat?.name?.substring(0, 2).toUpperCase() || 'OT'}
                         </span>
                       </div>
@@ -372,7 +372,7 @@ export function Dashboard() {
                     </div>
                   </div>
                 </div>
-                <span className={`${styles['subscription-amount']}`} style={{ color: s.type === 'income' ? '#22c55e' : '#1e293b' }}>
+                <span className={`${styles['subscription-amount']}`} style={{ color: s.type === 'income' ? '#22c55e' : 'var(--text-primary)' }}>
                   {s.type === 'income' ? '+' : '-'}{formatCurrency(s.amount)}
                 </span>
               </div>

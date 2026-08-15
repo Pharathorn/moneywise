@@ -6,6 +6,52 @@
   padding: 0;
 }
 
+:root {
+  --bg-page: #fafafa;
+  --bg-card: #ffffff;
+  --bg-card-alt: #f8fafc;
+  --border: #e2e8f0;
+  --border-subtle: #f1f5f9;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-tertiary: #475569;
+  --text-muted: #94a3b8;
+  --icon-muted: #cbd5e1;
+  --overlay: rgba(15, 23, 42, 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg-page: #0f172a;
+    --bg-card: #1e293b;
+    --bg-card-alt: #172033;
+    --border: #334155;
+    --border-subtle: #263349;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-tertiary: #cbd5e1;
+    --text-muted: #64748b;
+    --icon-muted: #475569;
+    --overlay: rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* mirrors utils/theme.ts's explicit choice, kept in sync via the pre-paint
+   inline script in index.html plus the in-app toggle */
+:root[data-theme='dark'] {
+  --bg-page: #0f172a;
+  --bg-card: #1e293b;
+  --bg-card-alt: #172033;
+  --border: #334155;
+  --border-subtle: #263349;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #cbd5e1;
+  --text-muted: #64748b;
+  --icon-muted: #475569;
+  --overlay: rgba(0, 0, 0, 0.6);
+}
+
 html {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -14,10 +60,11 @@ html {
 }
 
 body {
-  background: #fafafa;
-  color: #1e293b;
+  background: var(--bg-page);
+  color: var(--text-primary);
   line-height: 1.5;
   overflow-x: hidden;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 input, select, textarea, button {
@@ -34,12 +81,12 @@ input, select, textarea, button {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--icon-muted);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--text-muted);
 }
 
 ::selection {

@@ -151,7 +151,7 @@ export function Transactions() {
 
       <div className={styles.filters}>
         <div style={{ position: 'relative', flex: '1', maxWidth: '320px' }}>
-          <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+          <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
             className={styles['filter-input']}
             placeholder="Buscar..."
@@ -218,9 +218,9 @@ export function Transactions() {
                   ) : (
                     <div
                       className={styles['category-dot']}
-                      style={{ background: cat ? `${cat.color}15` : '#f1f5f9' }}
+                      style={{ background: cat ? `${cat.color}15` : 'var(--border-subtle)' }}
                     >
-                      <span style={{ color: cat?.color || '#94a3b8' }}>
+                      <span style={{ color: cat?.color || 'var(--text-muted)' }}>
                         {cat?.name?.substring(0, 2).toUpperCase() || 'OT'}
                       </span>
                     </div>

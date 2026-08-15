@@ -1,9 +1,9 @@
 .card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--border-subtle);
 }
 
 .card-header {
@@ -16,12 +16,12 @@
 .card-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .card-subtitle {
   font-size: 0.8125rem;
-  color: #64748b;
+  color: var(--text-secondary);
   margin: 0;
 }
