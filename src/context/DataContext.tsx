@@ -2,7 +2,7 @@ import { createContext, useContext, useReducer, useEffect, useState, ReactNode, 
 import { AppState, AppAction, Account, Transaction, Subscription, Category, TransactionType, PaymentMethod, HousingConfig, SubscriptionSection, Debt } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { defaultCategories } from '../utils/categories';
-import { needsRollover, getRolledOverDate } from '../utils/formatters';
+import { needsRollover, getRolledOverDate, isPaidThisCycle, generateId } from '../utils/formatters';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 
@@ -681,6 +681,38 @@ export function DataProvider({ children }: { children: ReactNode }) {
         });
       });
   }, [state.subscriptions, enhancedDispatch]);
+
+  // Leave a real, traceable transaction behind whenever a recurring payment
+  // becomes due, instead of only flipping its display state to "Pagado".
+  // Guarded by subscriptionId+date so it only logs once per occurrence.
+  useEffect(() => {
+    state.subscriptions
+      .filter((s) => s.active && isPaidThisCycle(s.nextPayment))
+      .forEach((s) => {
+        const alreadyLogged = state.transactions.some(
+          (t) => t.subscriptionId === s.id && t.date === s.nextPayment
+        );
+        if (alreadyLogged) return;
+
+        enhancedDispatch({
+          type: 'ADD_TRANSACTION',
+          payload: {
+            id: generateId(),
+            type: s.type,
+            amount: s.amount,
+            description: s.name,
+            category: s.category,
+            date: s.nextPayment,
+            recurring: true,
+            subscriptionId: s.id,
+            accountId: s.accountId,
+            toAccountId: s.toAccountId,
+            paymentMethod: s.paymentMethod,
+            image: s.image,
+          },
+        });
+      });
+  }, [state.subscriptions, state.transactions, enhancedDispatch]);
 
   return (
     <DataContext.Provider value={{ state, dispatch: enhancedDispatch, syncing, isOnline, manualSync, syncError }}>
