@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, Download, Upload } from 'lucide-react';
+import { Plus, Pencil, Trash2, Download, Upload, X } from 'lucide-react';
 import { useApp } from '../../context/DataContext';
 import { Category, TransactionType } from '../../types';
 import { formatCurrency, generateId } from '../../utils/formatters';
@@ -19,6 +19,35 @@ export function Settings() {
     color: COLORS[0],
     type: 'expense' as TransactionType,
   });
+  const [budgetDrafts, setBudgetDrafts] = useState<Record<string, string>>({});
+
+  const getBudgetDraft = (categoryId: string) => {
+    if (categoryId in budgetDrafts) return budgetDrafts[categoryId];
+    const existing = state.budgets.find((b) => b.categoryId === categoryId);
+    return existing ? existing.monthlyLimit.toString() : '';
+  };
+
+  const handleSaveBudget = (categoryId: string) => {
+    const raw = getBudgetDraft(categoryId);
+    const value = parseFloat(raw);
+    const existing = state.budgets.find((b) => b.categoryId === categoryId);
+
+    if (!raw || isNaN(value) || value <= 0) {
+      if (existing) dispatch({ type: 'DELETE_BUDGET', payload: existing.id });
+      setBudgetDrafts((prev) => {
+        const next = { ...prev };
+        delete next[categoryId];
+        return next;
+      });
+      return;
+    }
+
+    if (existing) {
+      dispatch({ type: 'UPDATE_BUDGET', payload: { ...existing, monthlyLimit: value } });
+    } else {
+      dispatch({ type: 'ADD_BUDGET', payload: { id: generateId(), categoryId, monthlyLimit: value } });
+    }
+  };
 
   const handleAddCategory = () => {
     if (!newCategory.name) return;
@@ -118,6 +147,59 @@ export function Settings() {
             <p className={styles['stat-label']}>Total gastos</p>
             <p className={styles['stat-value']} style={{ color: '#ef4444' }}>{formatCurrency(totalExpenses)}</p>
           </div>
+        </div>
+      </div>
+
+      <div className={styles.section}>
+        <div className={styles['section-header']}>
+          <h3 className={styles['section-title']}>Presupuestos</h3>
+          <p className={styles['section-subtitle']}>Pon un límite mensual por categoría de gasto (déjalo vacío para quitarlo)</p>
+        </div>
+        <div className={styles['category-list']}>
+          {state.categories.filter((c) => c.type === 'expense').map((cat) => (
+            <div key={cat.id} className={styles['category-item']}>
+              <div className={styles['category-left']}>
+                <div className={styles['category-dot']} style={{ background: `${cat.color}15` }}>
+                  <span style={{ color: cat.color, fontSize: '0.6rem', fontWeight: 600 }}>
+                    {cat.name.substring(0, 2).toUpperCase()}
+                  </span>
+                </div>
+                <span className={styles['category-name']}>{cat.name}</span>
+              </div>
+              <div className={styles.actions} style={{ alignItems: 'center' }}>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Sin límite"
+                  value={getBudgetDraft(cat.id)}
+                  onChange={(e) => setBudgetDrafts((prev) => ({ ...prev, [cat.id]: e.target.value }))}
+                  onBlur={() => handleSaveBudget(cat.id)}
+                  style={{
+                    width: '110px',
+                    padding: '0.4rem 0.6rem',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    fontSize: '0.8125rem',
+                    fontFamily: 'inherit',
+                  }}
+                />
+                {getBudgetDraft(cat.id) && (
+                  <button
+                    className={styles['action-btn']}
+                    title="Quitar límite"
+                    onClick={() => {
+                      setBudgetDrafts((prev) => ({ ...prev, [cat.id]: '' }));
+                      const existing = state.budgets.find((b) => b.categoryId === cat.id);
+                      if (existing) dispatch({ type: 'DELETE_BUDGET', payload: existing.id });
+                    }}
+                  >
+                    <X size={15} />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

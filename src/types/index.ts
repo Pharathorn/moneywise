@@ -95,6 +95,9 @@ export type AppAction =
   | { type: 'ADD_DEBT'; payload: Debt }
   | { type: 'UPDATE_DEBT'; payload: Debt }
   | { type: 'DELETE_DEBT'; payload: string }
+  | { type: 'ADD_BUDGET'; payload: Budget }
+  | { type: 'UPDATE_BUDGET'; payload: Budget }
+  | { type: 'DELETE_BUDGET'; payload: string }
   | { type: 'LOAD_DATA'; payload: AppState };
 
 export interface Debt {
@@ -111,6 +114,12 @@ export interface Debt {
   completedAt?: string;
 }
 
+export interface Budget {
+  id: string;
+  categoryId: string;
+  monthlyLimit: number;
+}
+
 export interface AppState {
   transactions: Transaction[];
   subscriptions: Subscription[];
@@ -118,4 +127,5 @@ export interface AppState {
   accounts: Account[];
   housingConfig?: HousingConfig;
   debts: Debt[];
+  budgets: Budget[];
 }

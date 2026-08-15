@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { TrendingUp, TrendingDown, Wallet, CreditCard, Landmark, Home } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, CreditCard, Landmark, Home, PiggyBank } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useApp } from '../../context/DataContext';
 import { formatCurrency, getCurrentMonthKey, getSubscriptionMonthAmount } from '../../utils/formatters';
@@ -113,6 +113,19 @@ export function Dashboard() {
     [state.transactions]
   );
 
+  const budgetProgress = useMemo(() => {
+    return state.budgets
+      .map((b) => {
+        const cat = state.categories.find((c) => c.id === b.categoryId);
+        const spent = monthTransactions
+          .filter((t) => t.type === 'expense' && t.category === b.categoryId)
+          .reduce((sum, t) => sum + t.amount, 0);
+        const percent = b.monthlyLimit > 0 ? Math.min(999, (spent / b.monthlyLimit) * 100) : 0;
+        return { ...b, name: cat?.name || b.categoryId, color: cat?.color || '#94a3b8', spent, percent };
+      })
+      .sort((a, b) => b.percent - a.percent);
+  }, [state.budgets, state.categories, monthTransactions]);
+
   const PIE_COLORS = ['#3b82f6', '#f97316', '#8b5cf6', '#ec4899', '#06b6d4', '#eab308', '#ef4444', '#22c55e'];
 
   return (
@@ -201,6 +214,45 @@ export function Dashboard() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {budgetProgress.length > 0 && (
+        <div className={styles['accounts-section']}>
+          <h3 className={styles['section-title']}>
+            <PiggyBank size={18} />
+            Presupuestos del mes
+          </h3>
+          <div className={styles['accounts-grid']}>
+            {budgetProgress.map((b) => {
+              const over = b.percent >= 100;
+              const warn = b.percent >= 80 && !over;
+              const barColor = over ? '#ef4444' : warn ? '#f97316' : '#22c55e';
+              return (
+                <div key={b.id} className={styles['account-card']}>
+                  <div className={styles['account-header']}>
+                    <div className={styles['account-info']}>
+                      <div className={styles['account-logo']} style={{ background: `${b.color}15` }}>
+                        <span style={{ color: b.color, fontWeight: 700, fontSize: '0.75rem' }}>
+                          {b.name.substring(0, 2).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <div className={styles['account-name']}>{b.name}</div>
+                        <div className={styles['account-bank']}>{formatCurrency(b.spent)} de {formatCurrency(b.monthlyLimit)}</div>
+                      </div>
+                    </div>
+                    <div style={{ color: barColor, fontWeight: 700, fontSize: '0.9375rem' }}>
+                      {Math.round(b.percent)}%
+                    </div>
+                  </div>
+                  <div style={{ height: '6px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden', marginTop: '0.75rem' }}>
+                    <div style={{ height: '100%', width: `${Math.min(100, b.percent)}%`, background: barColor, borderRadius: '4px', transition: 'width 0.3s ease' }} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
