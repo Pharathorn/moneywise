@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, ArrowLeftRight, CreditCard, Wallet, Home, Settings, Menu, X, LogOut, Cloud, CloudOff, Loader, RefreshCw, HandCoins, CalendarDays, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, ArrowLeftRight, CreditCard, Wallet, Home, Settings, Menu, X, LogOut, Cloud, CloudOff, Loader, RefreshCw, HandCoins, CalendarDays, Sun, Moon, FileText } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/DataContext';
 import { getEffectiveTheme, toggleTheme } from '../../utils/theme';
@@ -14,6 +14,7 @@ const navItems = [
   { to: '/calendar', icon: CalendarDays, label: 'Calendario' },
   { to: '/housing', icon: Home, label: 'Vivienda' },
   { to: '/debts', icon: HandCoins, label: 'Deudas' },
+  { to: '/report', icon: FileText, label: 'Informe' },
   { to: '/settings', icon: Settings, label: 'Ajustes' },
 ];
 

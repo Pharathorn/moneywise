@@ -203,3 +203,15 @@
     z-index: 45;
   }
 }
+
+@media print {
+  .sidebar,
+  .mobile-header,
+  .overlay {
+    display: none !important;
+  }
+  .main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+}

@@ -97,3 +97,20 @@ input, select, textarea, button {
   background: #bfdbfe;
   color: #1e293b;
 }
+
+/* Printed pages (Informe mensual) always render in light theme, regardless
+   of the active in-app dark mode. */
+@media print {
+  :root {
+    --bg-page: #ffffff !important;
+    --bg-card: #ffffff !important;
+    --bg-card-alt: #f8fafc !important;
+    --border: #e2e8f0 !important;
+    --border-subtle: #f1f5f9 !important;
+    --text-primary: #1e293b !important;
+    --text-secondary: #64748b !important;
+    --text-tertiary: #475569 !important;
+    --text-muted: #94a3b8 !important;
+    --icon-muted: #cbd5e1 !important;
+  }
+}
