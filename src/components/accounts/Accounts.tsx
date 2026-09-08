@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Plus, Pencil, Trash2, Wallet, Image as ImageIcon } from 'lucide-react';
 import { useApp } from '../../context/DataContext';
 import { Account } from '../../types';
-import { formatCurrency, generateId } from '../../utils/formatters';
+import { formatCurrency, generateId, getMonthlyAmount } from '../../utils/formatters';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Modal } from '../ui/Modal';
@@ -39,36 +39,44 @@ export function Accounts() {
 
   const accountsWithStats = useMemo(() => {
     return state.accounts.map((account) => {
-      const accountTransactions = state.transactions.filter((t) => t.accountId === account.id);
-      const income = accountTransactions
-        .filter((t) => t.type === 'income')
+      const income = state.transactions
+        .filter((t) => t.type === 'income' && t.accountId === account.id)
         .reduce((sum, t) => sum + t.amount, 0);
-      const expenses = accountTransactions
-        .filter((t) => t.type === 'expense')
+      const expenses = state.transactions
+        .filter((t) => t.type === 'expense' && t.accountId === account.id)
+        .reduce((sum, t) => sum + t.amount, 0);
+      // Transfers move money between two accounts: it leaves the source
+      // (accountId) and lands in the destination (toAccountId) — neither
+      // side is "income" or "expense", so they need their own handling.
+      const transfersIn = state.transactions
+        .filter((t) => t.type === 'transfer' && t.toAccountId === account.id)
+        .reduce((sum, t) => sum + t.amount, 0);
+      const transfersOut = state.transactions
+        .filter((t) => t.type === 'transfer' && t.accountId === account.id)
         .reduce((sum, t) => sum + t.amount, 0);
 
-      const accountSubscriptions = state.subscriptions.filter((s) => s.accountId === account.id && s.active);
+      const accountSubscriptions = state.subscriptions.filter(
+        (s) => s.active && (s.accountId === account.id || s.toAccountId === account.id)
+      );
       const recurringIncome = accountSubscriptions
-        .filter((s) => s.type === 'income')
-        .reduce((sum, s) => {
-          const monthly = s.billingCycle === 'yearly' ? s.amount / 12 : s.billingCycle === 'weekly' ? s.amount * 4.33 : s.amount;
-          return sum + monthly;
-        }, 0);
+        .filter((s) => s.type === 'income' || (s.type === 'transfer' && s.toAccountId === account.id))
+        .reduce((sum, s) => sum + getMonthlyAmount(s.amount, s.billingCycle), 0);
       const recurringExpenses = accountSubscriptions
-        .filter((s) => s.type === 'expense')
-        .reduce((sum, s) => {
-          const monthly = s.billingCycle === 'yearly' ? s.amount / 12 : s.billingCycle === 'weekly' ? s.amount * 4.33 : s.amount;
-          return sum + monthly;
-        }, 0);
+        .filter((s) => s.type === 'expense' || (s.type === 'transfer' && s.accountId === account.id))
+        .reduce((sum, s) => sum + getMonthlyAmount(s.amount, s.billingCycle), 0);
+
+      const accountTransactionCount = state.transactions.filter(
+        (t) => t.accountId === account.id || t.toAccountId === account.id
+      ).length;
 
       return {
         ...account,
         income,
         expenses,
-        balance: (account.initialBalance || 0) + income - expenses,
+        balance: (account.initialBalance || 0) + income - expenses + transfersIn - transfersOut,
         recurringIncome,
         recurringExpenses,
-        transactionCount: accountTransactions.length,
+        transactionCount: accountTransactionCount,
         subscriptionCount: accountSubscriptions.length,
       };
     });

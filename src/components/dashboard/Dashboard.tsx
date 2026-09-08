@@ -46,17 +46,24 @@ export function Dashboard() {
     return state.accounts
       .filter((a) => a.active)
       .map((account) => {
-        const allAccountTransactions = state.transactions.filter((t) => t.accountId === account.id);
-        const allIncome = allAccountTransactions
-          .filter((t) => t.type === 'income')
-          .reduce((sum, t) => sum + t.amount, 0);
-        const allExpenses = allAccountTransactions
-          .filter((t) => t.type === 'expense')
-          .reduce((sum, t) => sum + t.amount, 0);
-
         // Balance is cumulative (all-time), matching the Cuentas page —
         // income/expenses shown below are scoped to this month, as a
         // "this month's activity" indicator, not the balance itself.
+        // Transfers leave the source (accountId) and land in the
+        // destination (toAccountId); neither side is income or expense.
+        const allIncome = state.transactions
+          .filter((t) => t.type === 'income' && t.accountId === account.id)
+          .reduce((sum, t) => sum + t.amount, 0);
+        const allExpenses = state.transactions
+          .filter((t) => t.type === 'expense' && t.accountId === account.id)
+          .reduce((sum, t) => sum + t.amount, 0);
+        const allTransfersIn = state.transactions
+          .filter((t) => t.type === 'transfer' && t.toAccountId === account.id)
+          .reduce((sum, t) => sum + t.amount, 0);
+        const allTransfersOut = state.transactions
+          .filter((t) => t.type === 'transfer' && t.accountId === account.id)
+          .reduce((sum, t) => sum + t.amount, 0);
+
         const monthAccountTransactions = monthTransactions.filter((t) => t.accountId === account.id);
         const income = monthAccountTransactions
           .filter((t) => t.type === 'income')
@@ -65,7 +72,12 @@ export function Dashboard() {
           .filter((t) => t.type === 'expense')
           .reduce((sum, t) => sum + t.amount, 0);
 
-        return { ...account, income, expenses, balance: (account.initialBalance || 0) + allIncome - allExpenses };
+        return {
+          ...account,
+          income,
+          expenses,
+          balance: (account.initialBalance || 0) + allIncome - allExpenses + allTransfersIn - allTransfersOut,
+        };
       });
   }, [state.accounts, state.transactions, monthTransactions]);
 
