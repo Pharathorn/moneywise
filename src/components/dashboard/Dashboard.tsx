@@ -46,16 +46,28 @@ export function Dashboard() {
     return state.accounts
       .filter((a) => a.active)
       .map((account) => {
-        const accountTransactions = monthTransactions.filter((t) => t.accountId === account.id);
-        const income = accountTransactions
+        const allAccountTransactions = state.transactions.filter((t) => t.accountId === account.id);
+        const allIncome = allAccountTransactions
           .filter((t) => t.type === 'income')
           .reduce((sum, t) => sum + t.amount, 0);
-        const expenses = accountTransactions
+        const allExpenses = allAccountTransactions
           .filter((t) => t.type === 'expense')
           .reduce((sum, t) => sum + t.amount, 0);
-        return { ...account, income, expenses, balance: (account.initialBalance || 0) + income - expenses };
+
+        // Balance is cumulative (all-time), matching the Cuentas page —
+        // income/expenses shown below are scoped to this month, as a
+        // "this month's activity" indicator, not the balance itself.
+        const monthAccountTransactions = monthTransactions.filter((t) => t.accountId === account.id);
+        const income = monthAccountTransactions
+          .filter((t) => t.type === 'income')
+          .reduce((sum, t) => sum + t.amount, 0);
+        const expenses = monthAccountTransactions
+          .filter((t) => t.type === 'expense')
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        return { ...account, income, expenses, balance: (account.initialBalance || 0) + allIncome - allExpenses };
       });
-  }, [state.accounts, monthTransactions]);
+  }, [state.accounts, state.transactions, monthTransactions]);
 
   const categoryData = useMemo(() => {
     const byCategory: Record<string, number> = {};
