@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { TrendingUp, TrendingDown, Wallet, CreditCard, Landmark, Home, PiggyBank } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { TrendingUp, TrendingDown, Wallet, CreditCard, Landmark, Home, PiggyBank, Scale } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { useApp } from '../../context/DataContext';
-import { formatCurrency, getCurrentMonthKey, getSubscriptionMonthAmount, isPaidThisCycle } from '../../utils/formatters';
+import { formatCurrency, getCurrentMonthKey, getSubscriptionMonthAmount, isPaidThisCycle, getMortgageRemaining } from '../../utils/formatters';
 import styles from './Dashboard.module.css';
 
 export function Dashboard() {
@@ -81,6 +81,52 @@ export function Dashboard() {
       });
   }, [state.accounts, state.transactions, monthTransactions]);
 
+  // Patrimonio neto: sum of account balances as-of each cutoff date, minus
+  // mortgage capital still owed, plus/minus debts that were open at that
+  // date (a "por cobrar" debt is an asset, "por pagar" a liability).
+  const netWorthHistory = useMemo(() => {
+    const now = new Date();
+    const activeAccounts = state.accounts.filter((a) => a.active);
+
+    const accountsTotalAt = (cutoff: Date) =>
+      activeAccounts.reduce((total, account) => {
+        const income = state.transactions
+          .filter((t) => t.type === 'income' && t.accountId === account.id && new Date(t.date) <= cutoff)
+          .reduce((sum, t) => sum + t.amount, 0);
+        const expenses = state.transactions
+          .filter((t) => t.type === 'expense' && t.accountId === account.id && new Date(t.date) <= cutoff)
+          .reduce((sum, t) => sum + t.amount, 0);
+        const transfersIn = state.transactions
+          .filter((t) => t.type === 'transfer' && t.toAccountId === account.id && new Date(t.date) <= cutoff)
+          .reduce((sum, t) => sum + t.amount, 0);
+        const transfersOut = state.transactions
+          .filter((t) => t.type === 'transfer' && t.accountId === account.id && new Date(t.date) <= cutoff)
+          .reduce((sum, t) => sum + t.amount, 0);
+        return total + (account.initialBalance || 0) + income - expenses + transfersIn - transfersOut;
+      }, 0);
+
+    const debtsNetAt = (cutoff: Date) =>
+      state.debts.reduce((total, debt) => {
+        if (new Date(debt.createdAt) > cutoff) return total;
+        const wasOpenAt = debt.status === 'pending' || (debt.completedAt ? new Date(debt.completedAt) > cutoff : true);
+        if (!wasOpenAt) return total;
+        return total + (debt.type === 'collect' ? debt.amount : -debt.amount);
+      }, 0);
+
+    const points: { label: string; value: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const cutoff = i === 0 ? now : new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
+      const label = new Date(now.getFullYear(), now.getMonth() - i, 1).toLocaleDateString('es-ES', { month: 'short' });
+      const mortgageRemaining = state.housingConfig ? getMortgageRemaining(state.housingConfig, cutoff) : 0;
+      const value = accountsTotalAt(cutoff) - mortgageRemaining + debtsNetAt(cutoff);
+      points.push({ label, value });
+    }
+    return points;
+  }, [state.accounts, state.transactions, state.debts, state.housingConfig]);
+
+  const netWorth = netWorthHistory[netWorthHistory.length - 1]?.value ?? 0;
+  const netWorthChange = netWorthHistory.length > 1 ? netWorth - netWorthHistory[0].value : 0;
+
   const categoryData = useMemo(() => {
     const byCategory: Record<string, number> = {};
     monthTransactions
@@ -157,6 +203,36 @@ export function Dashboard() {
       <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 1.5rem 0' }}>
         Dashboard
       </h1>
+
+      <div className={styles['networth-card']}>
+        <div className={styles['networth-info']}>
+          <p className={styles['summary-label']}>
+            <Scale size={16} /> Patrimonio neto
+          </p>
+          <p className={`${styles['networth-value']} ${netWorth >= 0 ? styles.positive : styles.negative}`}>
+            {formatCurrency(netWorth)}
+          </p>
+          {netWorthChange !== 0 && (
+            <span className={`${styles['networth-change']} ${netWorthChange >= 0 ? styles.positive : styles.negative}`}>
+              {netWorthChange >= 0 ? '+' : ''}{formatCurrency(netWorthChange)} en 6 meses
+            </span>
+          )}
+        </div>
+        <div className={styles['networth-chart']}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={netWorthHistory}>
+              <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
+              <YAxis hide domain={['dataMin', 'dataMax']} />
+              <Tooltip
+                contentStyle={{ borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13 }}
+                formatter={(value) => formatCurrency(Number(value))}
+                labelFormatter={() => 'Patrimonio neto'}
+              />
+              <Line type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={2.5} dot={{ r: 3 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
 
       <div className={styles['summary-grid']}>
         <div className={styles['summary-card']}>

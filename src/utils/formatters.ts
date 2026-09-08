@@ -121,3 +121,34 @@ export function getOccurrenceInMonth(nextPayment: string, billingCycle: string, 
   const day = Math.min(d.getDate(), lastDay);
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
+
+export function monthsBetween(start: string, end: Date): number {
+  const s = new Date(start);
+  const months = (end.getFullYear() - s.getFullYear()) * 12 + (end.getMonth() - s.getMonth());
+  return Math.max(0, months);
+}
+
+interface MortgageConfig {
+  totalCapital: number;
+  monthlyPayment: number;
+  startDate: string;
+  termMonths: number;
+  interestRate?: number;
+}
+
+// Capital still owed on a mortgage as of a given date (French amortization
+// when an interest rate is set, straight-line otherwise). Shared by the
+// Vivienda page (as of today) and the net worth trend (as of past months).
+export function getMortgageRemaining(config: MortgageConfig, atDate: Date): number {
+  const effectiveMonthsPaid = Math.min(monthsBetween(config.startDate, atDate), config.termMonths);
+
+  if (config.interestRate && config.interestRate > 0) {
+    const r = config.interestRate / 100 / 12;
+    const factorNpaid = Math.pow(1 + r, effectiveMonthsPaid);
+    const remaining = config.totalCapital * factorNpaid - config.monthlyPayment * (factorNpaid - 1) / r;
+    return Math.max(0, remaining);
+  }
+
+  const capitalPaid = effectiveMonthsPaid * config.monthlyPayment;
+  return Math.max(0, config.totalCapital - capitalPaid);
+}

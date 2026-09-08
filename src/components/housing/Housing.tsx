@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Home, Plus, Pencil, Trash2, Landmark, Shield, Lightbulb, Droplets, Wifi, Receipt, Building2, CheckCircle2 } from 'lucide-react';
 import { useApp } from '../../context/DataContext';
 import { Subscription, HousingConfig, PaymentMethod, PAYMENT_METHODS } from '../../types';
-import { formatCurrency, getDaysUntil, getSubscriptionMonthAmount, generateId, isPaidThisCycle } from '../../utils/formatters';
+import { formatCurrency, getDaysUntil, getSubscriptionMonthAmount, generateId, isPaidThisCycle, monthsBetween, getMortgageRemaining } from '../../utils/formatters';
 import { Button } from '../ui/Button';
 import { Input, Select } from '../ui/Input';
 import { Modal } from '../ui/Modal';
@@ -21,12 +21,6 @@ const HOUSING_CATEGORIES = [
   { id: 'cat-ibi', name: 'IBI', icon: Receipt },
   { id: 'cat-comunidad', name: 'Comunidad', icon: Building2 },
 ];
-
-function monthsBetween(start: string, end: Date): number {
-  const s = new Date(start);
-  const months = (end.getFullYear() - s.getFullYear()) * 12 + (end.getMonth() - s.getMonth());
-  return Math.max(0, months);
-}
 
 export function Housing() {
   const { state, dispatch } = useApp();
@@ -59,31 +53,15 @@ export function Housing() {
 
   const mortgageStats = useMemo(() => {
     if (!config) return null;
-    const monthsPaid = monthsBetween(config.startDate, new Date());
+    const now = new Date();
     const totalPayments = config.termMonths;
-    const effectiveMonthsPaid = Math.min(monthsPaid, totalPayments);
+    const effectiveMonthsPaid = Math.min(monthsBetween(config.startDate, now), totalPayments);
 
-    let remaining: number;
-    let capitalPaid: number;
-    let totalInterestPaid: number;
-
-    if (config.interestRate && config.interestRate > 0) {
-      const r = config.interestRate / 100 / 12;
-      const factorN = Math.pow(1 + r, totalPayments);
-      const factorNpaid = Math.pow(1 + r, effectiveMonthsPaid);
-
-      // Fórmula de amortización francesa
-      remaining = config.totalCapital * factorNpaid - config.monthlyPayment * (factorNpaid - 1) / r;
-      remaining = Math.max(0, remaining);
-
-      const totalPaid = effectiveMonthsPaid * config.monthlyPayment;
-      capitalPaid = config.totalCapital - remaining;
-      totalInterestPaid = totalPaid - capitalPaid;
-    } else {
-      capitalPaid = effectiveMonthsPaid * config.monthlyPayment;
-      remaining = Math.max(0, config.totalCapital - capitalPaid);
-      totalInterestPaid = 0;
-    }
+    const remaining = getMortgageRemaining(config, now);
+    const capitalPaid = config.totalCapital - remaining;
+    const totalInterestPaid = config.interestRate && config.interestRate > 0
+      ? effectiveMonthsPaid * config.monthlyPayment - capitalPaid
+      : 0;
 
     const percentPaid = Math.min(100, (effectiveMonthsPaid / totalPayments) * 100);
     const endDate = new Date(config.startDate);
