@@ -748,7 +748,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         enhancedDispatch({
           type: 'ADD_TRANSACTION',
           payload: {
-            id: generateId(),
+            // Deterministic (not generateId()) so a re-fire of this effect —
+            // from a Supabase refetch race, another tab, or another device —
+            // upserts the same row instead of inserting a duplicate.
+            id: `autolog-${s.id}-${s.nextPayment}`,
             type: s.type,
             amount: s.amount,
             description: s.name,
