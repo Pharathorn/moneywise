@@ -89,19 +89,28 @@ export function Accounts() {
 
   const openEditModal = (account: Account) => {
     setEditingAccount(account);
+    const stats = accountsWithStats.find((a) => a.id === account.id);
     setForm({
       name: account.name,
       bank: account.bank,
       color: account.color,
       image: account.image || '',
       active: account.active,
-      initialBalance: (account.initialBalance || 0).toString(),
+      // Show the current balance (initial + income - expenses), not the raw
+      // starting balance, so editing it corrects the total you actually see.
+      initialBalance: (stats?.balance ?? account.initialBalance ?? 0).toString(),
     });
     setIsModalOpen(true);
   };
 
   const handleSubmit = () => {
     if (!form.name || !form.bank) return;
+
+    const enteredBalance = parseFloat(form.initialBalance) || 0;
+    // When editing, the field holds the desired current balance; back out
+    // the stored initialBalance so (initial + income - expenses) matches it.
+    const stats = editingAccount ? accountsWithStats.find((a) => a.id === editingAccount.id) : undefined;
+    const resolvedInitialBalance = stats ? enteredBalance - (stats.income - stats.expenses) : enteredBalance;
 
     const account: Account = {
       id: editingAccount?.id || generateId(),
@@ -111,7 +120,7 @@ export function Accounts() {
       icon: form.bank.substring(0, 1).toUpperCase(),
       image: form.image || undefined,
       active: form.active,
-      initialBalance: parseFloat(form.initialBalance) || 0,
+      initialBalance: resolvedInitialBalance,
     };
 
     if (editingAccount) {
