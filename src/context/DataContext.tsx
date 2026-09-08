@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
-import { AppState, AppAction, Account, Transaction, Subscription, Category, TransactionType, PaymentMethod, HousingConfig, SubscriptionSection, Debt, Budget } from '../types';
+import { AppState, AppAction, Account, Transaction, Subscription, Category, TransactionType, PaymentMethod, HousingConfig, SubscriptionSection, Debt, Budget, SavingsGoal } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { defaultCategories } from '../utils/categories';
 import { needsRollover, getRolledOverDate, isPaidThisCycle, generateId, getDaysUntil, formatCurrency } from '../utils/formatters';
@@ -14,6 +14,7 @@ const initialState: AppState = {
   accounts: [],
   debts: [],
   budgets: [],
+  savingsGoals: [],
 };
 
 function migrateData(data: unknown): AppState {
@@ -26,6 +27,7 @@ function migrateData(data: unknown): AppState {
     housingConfig: d.housingConfig as HousingConfig | undefined,
     debts: Array.isArray(d.debts) ? d.debts : [],
     budgets: Array.isArray(d.budgets) ? d.budgets : [],
+    savingsGoals: Array.isArray(d.savingsGoals) ? d.savingsGoals : [],
   };
 }
 
@@ -118,6 +120,20 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         budgets: state.budgets.filter((b) => b.id !== action.payload),
+      };
+    case 'ADD_SAVINGS_GOAL':
+      return { ...state, savingsGoals: [...state.savingsGoals, action.payload] };
+    case 'UPDATE_SAVINGS_GOAL':
+      return {
+        ...state,
+        savingsGoals: state.savingsGoals.map((g) =>
+          g.id === action.payload.id ? action.payload : g
+        ),
+      };
+    case 'DELETE_SAVINGS_GOAL':
+      return {
+        ...state,
+        savingsGoals: state.savingsGoals.filter((g) => g.id !== action.payload),
       };
     default:
       return state;
@@ -230,6 +246,19 @@ function rowToBudget(row: Record<string, unknown>): Budget {
   };
 }
 
+function rowToSavingsGoal(row: Record<string, unknown>): SavingsGoal {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    targetAmount: Number(row.target_amount),
+    targetDate: row.target_date as string | undefined,
+    accountId: row.account_id as string | undefined,
+    currentAmount: row.current_amount != null ? Number(row.current_amount) : undefined,
+    color: row.color as string,
+    createdAt: row.created_at as string,
+  };
+}
+
 export function DataProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [storedData, setStoredData] = useLocalStorage<AppState>('moneywise-data', initialState);
@@ -310,7 +339,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const loadDataFromSupabase = async (userId: string) => {
     setSyncing(true);
     try {
-      const [accountsRes, categoriesRes, transactionsRes, subscriptionsRes, housingRes, debtsRes, budgetsRes] = await Promise.all([
+      const [accountsRes, categoriesRes, transactionsRes, subscriptionsRes, housingRes, debtsRes, budgetsRes, savingsGoalsRes] = await Promise.all([
         supabase.from('accounts').select('*').eq('user_id', userId),
         supabase.from('categories').select('*').eq('user_id', userId),
         supabase.from('transactions').select('*').eq('user_id', userId),
@@ -318,6 +347,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         supabase.from('housing_config').select('*').eq('user_id', userId).maybeSingle(),
         supabase.from('debts').select('*').eq('user_id', userId),
         supabase.from('budgets').select('*').eq('user_id', userId),
+        supabase.from('savings_goals').select('*').eq('user_id', userId),
       ]);
 
       if (accountsRes.error) console.error('Error loading accounts:', accountsRes.error);
@@ -327,6 +357,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (housingRes.error) console.error('Error loading housing:', housingRes.error);
       if (debtsRes.error) console.error('Error loading debts:', debtsRes.error);
       if (budgetsRes.error) console.error('Error loading budgets:', budgetsRes.error);
+      if (savingsGoalsRes.error) console.error('Error loading savings goals:', savingsGoalsRes.error);
 
       console.log('[Sync] Loaded:', {
         accounts: (accountsRes.data || []).length,
@@ -336,6 +367,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         housing: housingRes.data ? 1 : 0,
         debts: (debtsRes.data || []).length,
         budgets: (budgetsRes.data || []).length,
+        savingsGoals: (savingsGoalsRes.data || []).length,
       });
 
       const remoteAccounts = (accountsRes.data || []).map(rowToAccount);
@@ -345,6 +377,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const remoteHousing = housingRes.data ? rowToHousingConfig(housingRes.data) : undefined;
       const remoteDebts = (debtsRes.data || []).map(rowToDebt);
       const remoteBudgets = (budgetsRes.data || []).map(rowToBudget);
+      const remoteSavingsGoals = (savingsGoalsRes.data || []).map(rowToSavingsGoal);
 
       if (remoteAccounts.length > 0 || remoteTransactions.length > 0 || remoteSubscriptions.length > 0 || remoteDebts.length > 0) {
         dispatch({
@@ -357,6 +390,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             housingConfig: remoteHousing,
             debts: remoteDebts,
             budgets: remoteBudgets,
+            savingsGoals: remoteSavingsGoals,
           },
         });
       } else if (!hasMigratedRef.current) {
@@ -657,6 +691,35 @@ export function DataProvider({ children }: { children: ReactNode }) {
         break;
       case 'DELETE_BUDGET':
         result = await supabase.from('budgets').delete().eq('id', action.payload);
+        if (result.error) throw result.error;
+        break;
+
+      case 'ADD_SAVINGS_GOAL':
+        result = await supabase.from('savings_goals').upsert({
+          id: action.payload.id,
+          user_id: userId,
+          name: action.payload.name,
+          target_amount: action.payload.targetAmount,
+          target_date: action.payload.targetDate,
+          account_id: action.payload.accountId,
+          current_amount: action.payload.currentAmount,
+          color: action.payload.color,
+        });
+        if (result.error) throw result.error;
+        break;
+      case 'UPDATE_SAVINGS_GOAL':
+        result = await supabase.from('savings_goals').update({
+          name: action.payload.name,
+          target_amount: action.payload.targetAmount,
+          target_date: action.payload.targetDate,
+          account_id: action.payload.accountId,
+          current_amount: action.payload.currentAmount,
+          color: action.payload.color,
+        }).eq('id', action.payload.id);
+        if (result.error) throw result.error;
+        break;
+      case 'DELETE_SAVINGS_GOAL':
+        result = await supabase.from('savings_goals').delete().eq('id', action.payload);
         if (result.error) throw result.error;
         break;
     }

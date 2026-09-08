@@ -12,6 +12,7 @@ import { Housing } from './components/housing/Housing';
 import { Debts } from './components/debts/Debts';
 import { Calendar } from './components/calendar/Calendar';
 import { MonthlyReport } from './components/report/MonthlyReport';
+import { SavingsGoals } from './components/goals/SavingsGoals';
 import { PWAUpdatePrompt } from './components/ui/PWAUpdatePrompt';
 
 export default function App() {
@@ -28,6 +29,7 @@ export default function App() {
                 <Route path="/subscriptions" element={<Subscriptions />} />
                 <Route path="/housing" element={<Housing />} />
                 <Route path="/debts" element={<Debts />} />
+                <Route path="/goals" element={<SavingsGoals />} />
                 <Route path="/calendar" element={<Calendar />} />
                 <Route path="/report" element={<MonthlyReport />} />
                 <Route path="/settings" element={<Settings />} />

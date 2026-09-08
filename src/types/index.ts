@@ -98,6 +98,9 @@ export type AppAction =
   | { type: 'ADD_BUDGET'; payload: Budget }
   | { type: 'UPDATE_BUDGET'; payload: Budget }
   | { type: 'DELETE_BUDGET'; payload: string }
+  | { type: 'ADD_SAVINGS_GOAL'; payload: SavingsGoal }
+  | { type: 'UPDATE_SAVINGS_GOAL'; payload: SavingsGoal }
+  | { type: 'DELETE_SAVINGS_GOAL'; payload: string }
   | { type: 'LOAD_DATA'; payload: AppState };
 
 export interface Debt {
@@ -120,6 +123,19 @@ export interface Budget {
   monthlyLimit: number;
 }
 
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  targetDate?: string;
+  // If accountId is set, progress tracks that account's live balance;
+  // otherwise it's the manually-entered currentAmount below.
+  accountId?: string;
+  currentAmount?: number;
+  color: string;
+  createdAt: string;
+}
+
 export interface AppState {
   transactions: Transaction[];
   subscriptions: Subscription[];
@@ -128,4 +144,5 @@ export interface AppState {
   housingConfig?: HousingConfig;
   debts: Debt[];
   budgets: Budget[];
+  savingsGoals: SavingsGoal[];
 }
