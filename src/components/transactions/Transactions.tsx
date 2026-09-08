@@ -47,6 +47,32 @@ export function Transactions() {
     [state.categories, form.type]
   );
 
+  // Most-used category per past description, so re-typing "Mercadona" etc.
+  // can auto-fill the category instead of picking it every time.
+  const suggestedCategoryByDescription = useMemo(() => {
+    const counts: Record<string, Record<string, number>> = {};
+    state.transactions.forEach((t) => {
+      if (t.type === 'transfer') return;
+      const key = t.description.trim().toLowerCase();
+      if (!key) return;
+      counts[key] = counts[key] || {};
+      counts[key][t.category] = (counts[key][t.category] || 0) + 1;
+    });
+    const best: Record<string, string> = {};
+    Object.entries(counts).forEach(([key, byCategory]) => {
+      best[key] = Object.entries(byCategory).sort((a, b) => b[1] - a[1])[0][0];
+    });
+    return best;
+  }, [state.transactions]);
+
+  const handleDescriptionBlur = () => {
+    if (form.type === 'transfer' || form.category) return;
+    const suggested = suggestedCategoryByDescription[form.description.trim().toLowerCase()];
+    if (suggested && categories.some((c) => c.id === suggested)) {
+      setForm((f) => ({ ...f, category: suggested }));
+    }
+  };
+
   const filterCategories = useMemo(
     () => state.categories.filter((c) => filterType === 'all' || filterType === 'transfer' || c.type === filterType),
     [state.categories, filterType]
@@ -331,6 +357,7 @@ export function Transactions() {
           label="Descripción"
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
+          onBlur={handleDescriptionBlur}
           placeholder={form.type === 'transfer' ? 'Ej: Transferencia a ahorros' : 'Ej: Compra supermercado'}
         />
 
